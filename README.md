@@ -1,8 +1,8 @@
-# Sample #
+# Util #
 
-**Sample** is a **UG4-Plugin** that serves as a starting point for the creation of new plugins
+**Util** is a **UG4-Plugin** providing functionality former expressed in *_util.lua.
 
-Copyright 2011-2015 Goethe Center for Scientific Computing, University Frankfurt
+Copyright 2024 Goethe University Frankfurt
 
 Please install/clone this repository through UG4's package manager
 [ughub](https://github.com/UG4/ughub).
