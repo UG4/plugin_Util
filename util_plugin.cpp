@@ -48,10 +48,10 @@ using namespace ug::bridge;
 #endif
 
 namespace ug{
-namespace Sample{
+namespace Util{
 
 /** 
- *  \defgroup sample_plugin Sample
+ *  \defgroup util_plugin Util
  *  \ingroup plugins
  *  This is a small sample plugin.
  *  \{
@@ -209,10 +209,10 @@ static void Common(Registry& reg, string grp)
  * This function is called when the plugin is loaded.
  */
 extern "C" void
-InitUGPlugin_Sample(Registry* reg, string grp)
+InitUGPlugin_Util(Registry* reg, string grp)
 {
-	grp.append("/Sample");
-	typedef Sample::Functionality Functionality;
+	grp.append("/Util");
+	typedef Util::Functionality Functionality;
 
 	try{
 		RegisterCommon<Functionality>(*reg,grp);
@@ -225,7 +225,7 @@ InitUGPlugin_Sample(Registry* reg, string grp)
 }
 
 extern "C" UG_API void
-FinalizeUGPlugin_Sample()
+FinalizeUGPlugin_Util()
 {
 }
 
