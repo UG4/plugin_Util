@@ -2,8 +2,17 @@
 # define __util__domain_util__h__ 
 
 // UG4 base libs.
-#include "common/util/smart_pointer.h"
+#include "common/common.h"
 #include "common/log.h"
+#include "common/util/smart_pointer.h"
+
+
+#include "lib_grid/refinement/refiner_factory.hpp"
+#include "lib_grid/algorithms/problem_detection_util.h" // CheckForUnconnectedSides
+
+
+#include "lib_disc/domain.h"
+#include "lib_disc/domain_util.h"
 
 // C++ libs.
 #include <vector>
@@ -12,8 +21,12 @@
 namespace ug {
 namespace Util {
 
-template <typename TObject>
-void write(TObject &text) { UG_LOG(text); }
+namespace aux {
+	template <typename TObject>
+	void write(TObject &text) { UG_LOG(text); }
+}
+
+using aux::write;
 
 // util.CheckSubsets
 // checks if all required subsets are contained in the SubsetHandler
@@ -22,7 +35,7 @@ void write(TObject &text) { UG_LOG(text); }
 // @return true if all subsets are contained, false else
 
 template <typename TDomain>
-bool CheckSubsets(TDomain &dom, std::vector<std::string> &neededSubsets)
+bool CheckSubsets(const TDomain &dom, const std::vector<std::string> &neededSubsets)
 {
 	auto sh = dom.subset_handler();
 	
@@ -37,8 +50,8 @@ bool CheckSubsets(TDomain &dom, std::vector<std::string> &neededSubsets)
 }
 
 
-// Creates a new domain and loads the specified grid. The method then performs
-// numRefs global refinements.
+// Creates a new domain and loads the specified grid.
+// The method then performs numRefs global refinements.
 // A list of subset-names can be specified which have to be present in the loaded grid.
 // The method returns the created domain.
 // @note Some paramters are optional. nil is a valid value for each optional parameter.
@@ -49,8 +62,6 @@ bool CheckSubsets(TDomain &dom, std::vector<std::string> &neededSubsets)
 //					an absolute path. If the grid still can't be found, the method
 //					tries to load it from UG_BASE/data/grids.
 // @param numRefs	(int) The total number of global refinements
-// @param numPreRefs	(int) The number of refinements that are performed before
-//						distribution.
 // @param neededSubsets	(optional, list of strings) The subsets that are required
 //							by the simulation. If not all those subsets are present,
 //							the method aborts. Default is an empty list.
@@ -61,50 +72,50 @@ template <typename TDomain>
 SmartPtr<TDomain> CreateDomain(const std::string &gridName, int numRefs,
 		const std::vector<std::string> &neededSubsets, bool noIntegrityCheck=false) {
 
-
-	// create Instance of a Domain
+	// Create domain instance.
 	auto dom = make_sp<TDomain>(new TDomain());
-	
-	/*
+
 	// load domain
-	write("Loading Domain " << gridName << " ... ");
-	LoadDomain<TDomain>(dom, gridName);
-	write("done." << std::endl; )
+	UG_LOG("Loading Domain " << gridName << " ... ")
+	LoadDomain(*dom, gridName.c_str()); // from lib_disc/domain_util.cpp
+	UG_LOG("done." << std::endl)
+
 
 	if (noIntegrityCheck == false) {
-		write("Performing integrity check on domain ... ")
-		if CheckForUnconnectedSides(dom->grid())
+		UG_LOG("Performing integrity check on domain ... ");
+		if (CheckForUnconnectedSides(*dom->grid()))
 		{
-			write("WARNING: unconnected sides found (see above).\n")
-			std::string note("NOTE: You may disable this check by passing 'true' " <<
-				  		 "to 'noIntegrityCheck' in 'util.CreateDomain'.\n");
-			write(note)
-			errlog(note)
+			UG_LOG("WARNING: unconnected sides found (see above).\n");
+			std::string note("NOTE: You may disable this check by passing 'true' to 'noIntegrityCheck' in 'util.CreateDomain'.\n");
+			UG_LOG(note);
+			UG_ERR_LOG(note);
 		}
-		write("done.\n")
+		UG_LOG("done.\n");
     }
 
 	// Create a refiner instance. This is a factory method
 	// which automatically creates a parallel refiner if required.
 	// if numRefs == nil then numRefs = 0 end
 	if (numRefs > 0) {
-		write("Refining("..numRefs.."): ")
-		auto refiner = GlobalDomainRefiner<TDomain>(dom)
-		for i=1,numRefs do
-			TerminateAbortedRun()
-			refiner:refine()
-			write(i .. " ")
-		end
-		write("done.\n")
+		UG_LOG("Refining(" << numRefs << "): ");
+		auto refiner = GlobalDomainRefiner(*dom);
+		for (int i=0; i<numRefs; ++i){
+			// TerminateAbortedRun();
+			refiner->refine();
+			UG_LOG(i << " ");
+		}
+		UG_LOG("done.\n");
 		// delete(refiner)
 	}
-	
+
 	// check whether required subsets are present
-	if (!neededSubsets.empty()) {
-		UG_ASSERT(CheckSubsets(dom, neededSubsets) == true, 
+	if (!neededSubsets.empty())
+	{
+
+		UG_ASSERT(CheckSubsets(*dom, neededSubsets) == true,
 			"Something wrong with required subsets. Aborting.");
 	}
-	*/
+
 	// return the created domain
 	return dom;
 }

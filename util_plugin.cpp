@@ -45,10 +45,11 @@
 #include "common/ug_config.h"
 #include "common/error.h"
 
+
 #include "lib_disc/domain.h"
+#include "lib_disc/domain_util.h"
 
-
-
+#include "ug.h"
 
 #include <string>
 
@@ -156,8 +157,14 @@ static void Domain(TRegistry& reg, string grp)
 	string suffix = GetDomainSuffix<TDomain>();
 	string tag = GetDomainTag<TDomain>();
 
+	reg.add_function("CheckSubsets", &CheckSubsets<TDomain>);
+
 	{
-		reg.add_function("CheckSubsets", &CheckSubsets<TDomain>);
+		// This is more complicated, as the return type should be included in name.
+		std::string grpname = std::string("CreateDomain");
+		reg.add_function(grpname.append(suffix),
+				static_cast<SmartPtr<TDomain>(*)(const std::string&, int, const std::vector<std::string> &)>
+			(&CreateDomain<TDomain>), grpname);
 	}
 }
 

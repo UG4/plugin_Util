@@ -37,7 +37,7 @@
 
 # Name of your plugin and sources.
 set(pluginName	Util)
-set(SOURCES		util_plugin.cpp)
+set(SOURCES		domain_util.cpp util_plugin.cpp)
 
 
 ################################################################################
