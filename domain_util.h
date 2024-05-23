@@ -1,6 +1,14 @@
 # ifndef __util__domain_util__h__ 
 # define __util__domain_util__h__ 
 
+// UG4 base libs.
+#include "common/util/smart_pointer.h"
+#include "common/log.h"
+
+// C++ libs.
+#include <vector>
+#include <string>
+
 namespace ug {
 namespace Util {
 
@@ -15,11 +23,12 @@ void write(TObject &text) { UG_LOG(text); }
 
 template <typename TDomain>
 bool CheckSubsets(TDomain &dom, std::vector<std::string> &neededSubsets)
-	auto sh = dom.subset_handler()
+{
+	auto sh = dom.subset_handler();
 	
     for (auto &subset : neededSubsets) {
-		if (sh->get_subset_index(subset) == -1)  {
-			write("Domain does not contain subset '" << tval <<"'.");
+		if (sh->get_subset_index(subset.c_str()) == -1)  {
+			UG_LOG("Domain does not contain subset '" << subset.c_str() <<"'.");
 			return false;
 		}
     }
@@ -47,24 +56,28 @@ bool CheckSubsets(TDomain &dom, std::vector<std::string> &neededSubsets)
 //							the method aborts. Default is an empty list.
 // @param noIntegrityCheck	(optional, bool) Disables integrity check if 'true'.
 
+
 template <typename TDomain>
-SmartPtr<TDomain> CreateDomain(std::string &gridName, int numRefs, 
-                            std::vector<std::string> &neededSubsets, bool noIntegrityCheck=false) {
+SmartPtr<TDomain> CreateDomain(const std::string &gridName, int numRefs,
+		const std::vector<std::string> &neededSubsets, bool noIntegrityCheck=false) {
+
 
 	// create Instance of a Domain
-	SmartPtr<TDomain> dom = TDomain();
+	auto dom = make_sp<TDomain>(new TDomain());
 	
+	/*
 	// load domain
 	write("Loading Domain " << gridName << " ... ");
-	LoadDomain(dom, gridName)
-	write("done." << std:endl; )
+	LoadDomain<TDomain>(dom, gridName);
+	write("done." << std::endl; )
 
-	if (noIntegrityCheck != true) {
+	if (noIntegrityCheck == false) {
 		write("Performing integrity check on domain ... ")
-		if CheckForUnconnectedSides(dom:grid()) == true { 
+		if CheckForUnconnectedSides(dom->grid())
+		{
 			write("WARNING: unconnected sides found (see above).\n")
-			local note = "NOTE: You may disable this check by passing 'true' " << 
-				  		 "to 'noIntegrityCheck' in 'util.CreateDomain'.\n"
+			std::string note("NOTE: You may disable this check by passing 'true' " <<
+				  		 "to 'noIntegrityCheck' in 'util.CreateDomain'.\n");
 			write(note)
 			errlog(note)
 		}
@@ -76,7 +89,7 @@ SmartPtr<TDomain> CreateDomain(std::string &gridName, int numRefs,
 	// if numRefs == nil then numRefs = 0 end
 	if (numRefs > 0) {
 		write("Refining("..numRefs.."): ")
-		local refiner = GlobalDomainRefiner(dom)
+		auto refiner = GlobalDomainRefiner<TDomain>(dom)
 		for i=1,numRefs do
 			TerminateAbortedRun()
 			refiner:refine()
@@ -91,28 +104,28 @@ SmartPtr<TDomain> CreateDomain(std::string &gridName, int numRefs,
 		UG_ASSERT(CheckSubsets(dom, neededSubsets) == true, 
 			"Something wrong with required subsets. Aborting.");
 	}
-	
+	*/
 	// return the created domain
-	return dom
+	return dom;
 }
 
 
 template <typename TDomain>
-SmartPtr<TDomain> CreateDomain(std::string &gridName, int numRefs, std::vector<std::string> &neededSubsets) 
+SmartPtr<TDomain> CreateDomain(const std::string &gridName, int numRefs, const std::vector<std::string> &neededSubsets)
 { 
-    return CreateDomain(std::string &gridName, int numRefs, std::vector<std::string> &neededSubsets, false) 
+    return CreateDomain<TDomain>(gridName, numRefs, neededSubsets, false);
 }
 
 template <typename TDomain>
-SmartPtr<TDomain> CreateDomain(std::string &gridName, int numRefs) 
+SmartPtr<TDomain> CreateDomain(const std::string &gridName, int numRefs)
 { 
-    return CreateDomain(std::string &gridName, int numRefs, std::vector<std::string>()); 
+    return CreateDomain<TDomain>(gridName,numRefs, std::vector<std::string>());
 }
 
 template <typename TDomain>
-SmartPtr<TDomain> CreateDomain(std::string &gridName) 
+SmartPtr<TDomain> CreateDomain(const std::string &gridName)
 { 
-    return CreateDomain(std::string &gridName, 0); 
+    return CreateDomain<TDomain>(gridName, 0);
 }
 
 
@@ -243,4 +256,5 @@ end
 */
 } // namespace util
 } // namespace ug
-# endif
+
+# endif //__util__domain_util__h__

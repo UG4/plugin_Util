@@ -30,14 +30,26 @@
  * GNU Lesser General Public License for more details.
  */
 
-#include "bridge/util.h"
+
+// Own headers.
+#include "domain_util.h"
 
 // replace this with util_domain_dependent.h or util_algebra_dependent.h
 // to speed up compilation time
-#include "bridge/util_domain_algebra_dependent.h"
+#include "bridge/bridge.h"
+#include "bridge/util.h"
+#include "bridge/util_domain_dependent.h"
+#include "bridge/util_algebra_dependent.h"
+// #include "bridge/util_domain_algebra_dependent.h"
 
 #include "common/ug_config.h"
 #include "common/error.h"
+
+#include "lib_disc/domain.h"
+
+
+
+
 #include <string>
 
 using namespace std;
@@ -119,8 +131,8 @@ struct Functionality
  * @param reg				registry
  * @param parentGroup		group for sorting of functionality
  */
-template <typename TDomain, typename TAlgebra>
-static void DomainAlgebra(Registry& reg, string grp)
+template <typename TDomain, typename TAlgebra, typename TRegistry=ug::bridge::Registry>
+static void DomainAlgebra(TRegistry& reg, string grp)
 {
 //	useful defines
 	string suffix = GetDomainAlgebraSuffix<TDomain,TAlgebra>();
@@ -137,13 +149,16 @@ static void DomainAlgebra(Registry& reg, string grp)
  * @param reg				registry
  * @param parentGroup		group for sorting of functionality
  */
-template <typename TDomain>
-static void Domain(Registry& reg, string grp)
+template <typename TDomain, typename TRegistry=ug::bridge::Registry>
+static void Domain(TRegistry& reg, string grp)
 {
 //	useful defines
 	string suffix = GetDomainSuffix<TDomain>();
 	string tag = GetDomainTag<TDomain>();
 
+	{
+		reg.add_function("CheckSubsets", &CheckSubsets<TDomain>);
+	}
 }
 
 /**
@@ -155,8 +170,8 @@ static void Domain(Registry& reg, string grp)
  * @param reg				registry
  * @param parentGroup		group for sorting of functionality
  */
-template <int dim>
-static void Dimension(Registry& reg, string grp)
+template <int dim, typename TRegistry=ug::bridge::Registry>
+static void Dimension(TRegistry& reg, string grp)
 {
 //	useful defines
 	string suffix = GetDimensionSuffix<dim>();
@@ -218,8 +233,8 @@ InitUGPlugin_Util(Registry* reg, string grp)
 		RegisterCommon<Functionality>(*reg,grp);
 		RegisterDimensionDependent<Functionality>(*reg,grp);
 		RegisterDomainDependent<Functionality>(*reg,grp);
-		RegisterAlgebraDependent<Functionality>(*reg,grp);
-		RegisterDomainAlgebraDependent<Functionality>(*reg,grp);
+		//RegisterAlgebraDependent<Functionality>(*reg,grp);
+		//RegisterDomainAlgebraDependent<Functionality>(*reg,grp);
 	}
 	UG_REGISTRY_CATCH_THROW(grp);
 }
