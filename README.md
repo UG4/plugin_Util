@@ -1,10 +1,10 @@
 # Util #
 
-**Util** is a **UG4-Plugin** providing functionality former expressed in *_util.lua.
+**Util** is a (tentative) **UG4-Plugin** providing functionality originally expressed in *_util.lua.
 
 Copyright 2024 Goethe University Frankfurt
 
-Replaces:
+Replacements (tentative):
 
 * ugcore/scripts/util/domain_util.lua
 
