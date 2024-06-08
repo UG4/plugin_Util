@@ -70,51 +70,6 @@ namespace Util{
  *  \{
  */
 
-void PluginSaysHello()
-{
-#ifdef UG_PARALLEL
-	pcl::SynchronizeProcesses();
-	cout << "Hello, I'm your plugin on proc " <<
-				pcl::ProcRank() << "." << endl;
-	pcl::SynchronizeProcesses();
-#else
-	UG_LOG("Hello, I'm your personal plugin in serial environment!\n");
-#endif
-}
-
-void CrashFct(const string& reason)
-{
-	UG_THROW("I Crash because: "<< reason);
-}
-
-void CrashFctFatal(const string& reason)
-{
-	UG_THROW("I Crash fatal because: "<< reason);
-}
-
-void PluginCrashes()
-{
-	try{
-		CrashFct("Some funny reason");
-	}
-	catch(bad_alloc& err)
-	{
-		UG_LOG("Bad Alloc");
-	}
-	UG_CATCH_THROW("Something wrong in PluginCrashes");
-}
-
-void PluginCrashesFatal()
-{
-	try{
-		CrashFctFatal("Some fatal reason");
-	}
-	catch(bad_alloc& err)
-	{
-		UG_LOG("Bad Alloc");
-	}
-	UG_CATCH_THROW("Something wrong in PluginCrashesFatal");
-}
 
 /**
  * Class exporting the functionality of the plugin. All functionality that is to
@@ -195,8 +150,8 @@ static void Dimension(TRegistry& reg, string grp)
  * @param reg				registry
  * @param parentGroup		group for sorting of functionality
  */
-template <typename TAlgebra>
-static void Algebra(Registry& reg, string grp)
+template <typename TAlgebra, typename TRegistry=ug::bridge::Registry>
+static void Algebra(TRegistry& reg, string grp)
 {
 //	useful defines
 	string suffix = GetAlgebraSuffix<TAlgebra>();
@@ -212,11 +167,12 @@ static void Algebra(Registry& reg, string grp)
  * @param reg				registry
  * @param parentGroup		group for sorting of functionality
  */
-static void Common(Registry& reg, string grp)
+template <typename TRegistry=ug::bridge::Registry>
+static void Common(TRegistry& reg, string grp)
 {
-	reg.add_function("PluginSaysHello", &PluginSaysHello, grp)
-		.add_function("PluginCrashes", &PluginCrashes, grp)
-		.add_function("PluginCrashesFatal", &PluginCrashesFatal, grp);
+	//reg.add_function("PluginSaysHello", &PluginSaysHello, grp)
+	//	.add_function("PluginCrashes", &PluginCrashes, grp)
+	//	.add_function("PluginCrashesFatal", &PluginCrashesFatal, grp);
 }
 
 }; // end Functionality
@@ -227,28 +183,53 @@ static void Common(Registry& reg, string grp)
 }// end of namespace Sample
 
 
+template <typename TRegistry=ug::bridge::Registry>
+void RegisterBridge_Util(TRegistry& reg, string grp)
+{
+	grp.append("/Util");
+	typedef Util::Functionality Functionality;
+
+	try{
+#ifndef UG_USE_PYBIND11
+		//RegisterCommon<Functionality>(*reg,grp);
+		//RegisterDimensionDependent<Functionality>(*reg,grp);
+		RegisterDomainDependent<Functionality>(reg,grp);
+		//RegisterAlgebraDependent<Functionality>(*reg,grp);
+		//RegisterDomainAlgebraDependent<Functionality>(*reg,grp);
+#else
+		//RegisterCommon<Functionality, TRegistry>(*reg,grp);
+		//RegisterDimensionDependent<Functionality, TRegistry>(*reg,grp);
+		RegisterDomainDependent<Functionality, TRegistry>(reg,grp);
+		//RegisterAlgebraDependent<Functionality>(*reg,grp);
+		//RegisterDomainAlgebraDependent<Functionality>(*reg,grp);
+#endif
+
+	}
+	UG_REGISTRY_CATCH_THROW(grp);
+}
+
+
 /**
  * This function is called when the plugin is loaded.
  */
 extern "C" void
 InitUGPlugin_Util(Registry* reg, string grp)
 {
-	grp.append("/Util");
-	typedef Util::Functionality Functionality;
-
-	try{
-		RegisterCommon<Functionality>(*reg,grp);
-		RegisterDimensionDependent<Functionality>(*reg,grp);
-		RegisterDomainDependent<Functionality>(*reg,grp);
-		//RegisterAlgebraDependent<Functionality>(*reg,grp);
-		//RegisterDomainAlgebraDependent<Functionality>(*reg,grp);
-	}
-	UG_REGISTRY_CATCH_THROW(grp);
+	RegisterBridge_Util(*reg, grp);
 }
 
 extern "C" UG_API void
 FinalizeUGPlugin_Util()
-{
+{}
+
+
+#ifdef UG_USE_PYBIND11 // Expose for pybind11.
+namespace Util{
+	void InitUGPlugin(ug::pybind::Registry* reg, string grp)
+	{
+		RegisterBridge_Util<ug::pybind::Registry>(*reg, grp);
+	}
 }
+#endif
 
 }//	end of namespace ug

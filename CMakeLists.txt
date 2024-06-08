@@ -50,6 +50,10 @@ project(UG_PLUGIN_${pluginName})
 # include the definitions and dependencies for ug-plugins.
 include(${UG_ROOT_CMAKE_PATH}/ug_plugin_includes.cmake)
 
+################################################################################
+# Classic binding (static or dynamic plugin).
+################################################################################
+if(NOT USE_PYBIND11)
 if(buildEmbeddedPlugins)
 	# add the sources to ug4's sources
 	EXPORTSOURCES(${CMAKE_CURRENT_SOURCE_DIR} ${SOURCES})
@@ -58,3 +62,24 @@ else(buildEmbeddedPlugins)
 	add_library(${pluginName} SHARED ${SOURCES})
 	target_link_libraries (${pluginName} ug4)
 endif(buildEmbeddedPlugins)
+endif(NOT USE_PYBIND11)
+
+################################################################################
+# Python binding (static plugin, dynamic python interface).
+################################################################################
+if(USE_PYBIND11)
+
+	# Static plugin.
+	# include_directories(${SUPERLU_INCLUDE_DIRS})
+	add_library(${pluginName} STATIC ${SOURCES})
+
+	SET(myPluginSources util_plugin_pybind.cpp)
+	# SET(myLibraries ug4 SuperLU6)
+	
+	# First argument must match module name in PYBIND11_MODULE call
+	python_add_library(pyutil MODULE ${myPluginSources} ${SOURCES} WITH_SOABI)
+	# ug4pybind_add_module(pyutil ${myPluginSources} ${myLibraries})
+	target_link_libraries (pyutil PRIVATE ${pluginName} ug4_s)
+	set_target_properties(pyutil PROPERTIES INSTALL_RPATH "$ORIGIN/..:$ORIGIN/../../../lib")
+	install(TARGETS pyutil LIBRARY DESTINATION ug4py COMPONENT pymodules)
+endif(USE_PYBIND11)
