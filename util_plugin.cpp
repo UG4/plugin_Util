@@ -224,7 +224,7 @@ FinalizeUGPlugin_Util()
 
 
 #ifdef UG_USE_PYBIND11 // Expose for pybind11.
-namespace Util{
+namespace UtilBridge{
 	void InitUGPlugin(ug::pybind::Registry* reg, string grp)
 	{
 		RegisterBridge_Util<ug::pybind::Registry>(*reg, grp);
