@@ -180,7 +180,7 @@ static void Common(TRegistry& reg, string grp)
 // end group sample_plugin
 /// \}
 
-}// end of namespace Sample
+}// end of namespace Util
 
 
 template <typename TRegistry=ug::bridge::Registry>
@@ -209,27 +209,26 @@ void RegisterBridge_Util(TRegistry& reg, string grp)
 }
 
 
-/**
- * This function is called when the plugin is loaded.
- */
-extern "C" void
-InitUGPlugin_Util(Registry* reg, string grp)
-{
-	RegisterBridge_Util(*reg, grp);
-}
-
-extern "C" UG_API void
-FinalizeUGPlugin_Util()
-{}
-
 
 #ifdef UG_USE_PYBIND11 // Expose for pybind11.
-namespace UtilBridge{
+namespace Util{
 	void InitUGPlugin(ug::pybind::Registry* reg, string grp)
 	{
-		RegisterBridge_Util<ug::pybind::Registry>(*reg, grp);
+		ug::RegisterBridge_Util<ug::pybind::Registry>(*reg, grp);
 	}
 }
 #endif
 
+
 }//	end of namespace ug
+
+
+/**
+ * This function is called when the plugin is loaded.
+ */
+extern "C" void InitUGPlugin_Util(Registry* reg, string grp)
+{ ug::RegisterBridge_Util(*reg, grp); }
+
+extern "C" UG_API void FinalizeUGPlugin_Util()
+{}
+
