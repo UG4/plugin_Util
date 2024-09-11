@@ -130,13 +130,14 @@ SmartPtr<TDomain> CreateDomain(const std::string &gridName, int numRefs, const s
 template <typename TDomain>
 SmartPtr<TDomain> CreateDomain(const std::string &gridName, int numRefs)
 { 
-    return CreateDomain<TDomain>(gridName,numRefs, std::vector<std::string>());
+    return CreateDomain<TDomain>(gridName,numRefs, std::vector<std::string>(), false);
 }
 
 template <typename TDomain>
 SmartPtr<TDomain> CreateDomain(const std::string &gridName)
-{ 
-    return CreateDomain<TDomain>(gridName, 0);
+{
+
+    return CreateDomain<TDomain>(gridName, 0, std::vector<std::string>(), false);
 }
 
 

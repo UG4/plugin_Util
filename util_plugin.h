@@ -13,10 +13,10 @@ extern "C" void FinalizeUGPlugin_Util();
 #include "bindings/pybind/ug_pybind.h"
 
 namespace ug {
-
-
-namespace Util{
+namespace bridge {
+namespace UtilBridge{
 	void InitUGPlugin(ug::pybind::Registry* reg, std::string grp);
+}
 }
 }
 #endif

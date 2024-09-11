@@ -40,12 +40,12 @@
 #include "bridge/util.h"
 #include "bridge/util_domain_dependent.h"
 #include "bridge/util_algebra_dependent.h"
-// #include "bridge/util_domain_algebra_dependent.h"
+#include "bridge/util_domain_algebra_dependent.h"
 
 #include "common/ug_config.h"
 #include "common/error.h"
 
-
+#include "solver_util.h"
 #include "lib_disc/domain.h"
 #include "lib_disc/domain_util.h"
 
@@ -70,6 +70,51 @@ namespace Util{
  *  \{
  */
 
+void PluginSaysHello()
+{
+#ifdef UG_PARALLEL
+	pcl::SynchronizeProcesses();
+	cout << "Hello, I'm your plugin on proc " <<
+				pcl::ProcRank() << "." << endl;
+	pcl::SynchronizeProcesses();
+#else
+	UG_LOG("Hello, I'm your personal plugin in serial environment!\n");
+#endif
+}
+
+void CrashFct(const string& reason)
+{
+	UG_THROW("I Crash because: "<< reason);
+}
+
+void CrashFctFatal(const string& reason)
+{
+	UG_THROW("I Crash fatal because: "<< reason);
+}
+
+void PluginCrashes()
+{
+	try{
+		CrashFct("Some funny reason");
+	}
+	catch(bad_alloc& err)
+	{
+		UG_LOG("Bad Alloc");
+	}
+	UG_CATCH_THROW("Something wrong in PluginCrashes");
+}
+
+void PluginCrashesFatal()
+{
+	try{
+		CrashFctFatal("Some fatal reason");
+	}
+	catch(bad_alloc& err)
+	{
+		UG_LOG("Bad Alloc");
+	}
+	UG_CATCH_THROW("Something wrong in PluginCrashesFatal");
+}
 
 /**
  * Class exporting the functionality of the plugin. All functionality that is to
@@ -94,7 +139,31 @@ static void DomainAlgebra(TRegistry& reg, string grp)
 	string suffix = GetDomainAlgebraSuffix<TDomain,TAlgebra>();
 	string tag = GetDomainAlgebraTag<TDomain,TAlgebra>();
 
-}
+        {
+            // This is more complicated, as the return type should be included in name.
+            std::string grpname = std::string("CreatePreconditioner");
+            typedef IPreconditioner<TAlgebra> T;
+            //reg.add_function(grpname.append(suffix),
+              //              static_cast<SmartPtr<T>(*)(nlohmann::json&, SolverUtil<TDomain, TAlgebra>)>
+                //             (&CreatePreconditioner<TDomain, TAlgebra>), grpname);
+            reg.add_function(grpname, &CreatePreconditioner<TDomain, TAlgebra>);
+        }
+
+       // reg.add_function(grpname.append(suffix),
+         //                static_cast<SmartPtr<TDomain>(*)(const std::string&, int, const std::vector<std::string> &)>
+           //              (&CreateDomain<TDomain>), grpname);
+        {
+            //typedef Domain<dim> domain_type;
+            typedef SolverUtil<TDomain, TAlgebra> T;
+
+
+            string name = string("SolverUtil").append(suffix);
+            reg.template add_class_<T>(name, grp).add_constructor()
+                    .set_construct_as_smart_pointer(true);
+            reg.add_class_to_group(name, "SolverUtil", tag);
+        }
+
+    }
 
 /**
  * Function called for the registration of Domain dependent parts
@@ -121,6 +190,27 @@ static void Domain(TRegistry& reg, string grp)
 				static_cast<SmartPtr<TDomain>(*)(const std::string&, int, const std::vector<std::string> &)>
 			(&CreateDomain<TDomain>), grpname);
 	}
+        {
+            // This is more complicated, as the return type should be included in name.
+            std::string grpname = std::string("CreateDomain");
+            reg.add_function(grpname.append(suffix),
+                             static_cast<SmartPtr<TDomain>(*)(const std::string&)>
+                             (&CreateDomain<TDomain>), grpname);
+        }
+        {
+            // This is more complicated, as the return type should be included in name.
+            std::string grpname = std::string("CreateDomain");
+            reg.add_function(grpname.append(suffix),
+                             static_cast<SmartPtr<TDomain>(*)(const std::string&, int)>
+                             (&CreateDomain<TDomain>), grpname);
+        }
+        {
+            // This is more complicated, as the return type should be included in name.
+            std::string grpname = std::string("CreateDomain");
+            reg.add_function(grpname.append(suffix),
+                             static_cast<SmartPtr<TDomain>(*)(const std::string&, int, const std::vector<std::string> &, bool)>
+                             (&CreateDomain<TDomain>), grpname);
+        }
 }
 
 /**
@@ -150,12 +240,20 @@ static void Dimension(TRegistry& reg, string grp)
  * @param reg				registry
  * @param parentGroup		group for sorting of functionality
  */
-template <typename TAlgebra, typename TRegistry=ug::bridge::Registry>
-static void Algebra(TRegistry& reg, string grp)
+template <typename TAlgebra>
+static void Algebra(Registry& reg, string grp)
 {
 //	useful defines
 	string suffix = GetAlgebraSuffix<TAlgebra>();
 	string tag = GetAlgebraTag<TAlgebra>();
+    typedef typename TAlgebra::vector_type vector_type;
+        {
+            // This is more complicated, as the return type should be included in name.
+            std::string grpname = std::string("CreateConvCheck");
+            reg.add_function(grpname.append(suffix),
+                             static_cast<SmartPtr<StdConvCheck<vector_type>>(*)(nlohmann::json&)>
+                             (&CreateConvCheck<TAlgebra>), grpname);
+        }
 
 }
 
@@ -167,12 +265,11 @@ static void Algebra(TRegistry& reg, string grp)
  * @param reg				registry
  * @param parentGroup		group for sorting of functionality
  */
-template <typename TRegistry=ug::bridge::Registry>
-static void Common(TRegistry& reg, string grp)
+static void Common(Registry& reg, string grp)
 {
-	//reg.add_function("PluginSaysHello", &PluginSaysHello, grp)
-	//	.add_function("PluginCrashes", &PluginCrashes, grp)
-	//	.add_function("PluginCrashesFatal", &PluginCrashesFatal, grp);
+	reg.add_function("PluginSaysHello", &PluginSaysHello, grp)
+		.add_function("PluginCrashes", &PluginCrashes, grp)
+		.add_function("PluginCrashesFatal", &PluginCrashesFatal, grp);
 }
 
 }; // end Functionality
@@ -180,7 +277,7 @@ static void Common(TRegistry& reg, string grp)
 // end group sample_plugin
 /// \}
 
-}// end of namespace Util
+}// end of namespace Sample
 
 
 template <typename TRegistry=ug::bridge::Registry>
@@ -193,15 +290,16 @@ void RegisterBridge_Util(TRegistry& reg, string grp)
 #ifndef UG_USE_PYBIND11
 		//RegisterCommon<Functionality>(*reg,grp);
 		//RegisterDimensionDependent<Functionality>(*reg,grp);
-		RegisterDomainDependent<Functionality>(reg,grp);
-		//RegisterAlgebraDependent<Functionality>(*reg,grp);
-		//RegisterDomainAlgebraDependent<Functionality>(*reg,grp);
+        RegisterDomainAlgebraDependent<Functionality>(reg,grp);
+        RegisterDomainDependent<Functionality>(reg,grp);
+		RegisterAlgebraDependent<Functionality>(reg,grp);
+
 #else
 		//RegisterCommon<Functionality, TRegistry>(*reg,grp);
 		//RegisterDimensionDependent<Functionality, TRegistry>(*reg,grp);
 		RegisterDomainDependent<Functionality, TRegistry>(reg,grp);
-		//RegisterAlgebraDependent<Functionality>(*reg,grp);
-		//RegisterDomainAlgebraDependent<Functionality>(*reg,grp);
+		RegisterAlgebraDependent<Functionality>(*reg,grp);
+		RegisterDomainAlgebraDependent<Functionality>(*reg,grp);
 #endif
 
 	}
@@ -209,26 +307,27 @@ void RegisterBridge_Util(TRegistry& reg, string grp)
 }
 
 
+/**
+ * This function is called when the plugin is loaded.
+ */
+extern "C" void
+InitUGPlugin_Util(Registry* reg, string grp)
+{
+	RegisterBridge_Util(*reg, grp);
+}
+
+extern "C" UG_API void
+FinalizeUGPlugin_Util()
+{}
+
 
 #ifdef UG_USE_PYBIND11 // Expose for pybind11.
-namespace Util{
+namespace UtilBridge{
 	void InitUGPlugin(ug::pybind::Registry* reg, string grp)
 	{
-		ug::RegisterBridge_Util<ug::pybind::Registry>(*reg, grp);
+		RegisterBridge_Util<ug::pybind::Registry>(*reg, grp);
 	}
 }
 #endif
 
-
 }//	end of namespace ug
-
-
-/**
- * This function is called when the plugin is loaded.
- */
-extern "C" void InitUGPlugin_Util(Registry* reg, string grp)
-{ ug::RegisterBridge_Util(*reg, grp); }
-
-extern "C" UG_API void FinalizeUGPlugin_Util()
-{}
-

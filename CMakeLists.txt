@@ -39,7 +39,7 @@
 set(pluginName	Util)
 set(SOURCES		domain_util.cpp util_plugin.cpp)
 
-
+set (CMAKE_CXX_STANDARD 17)
 ################################################################################
 # The code below doesn't have to be changed (usually)
 ################################################################################

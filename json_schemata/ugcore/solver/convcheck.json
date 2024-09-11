@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Convergence check",
+  "type": "object",
+
+  "properties": {
+    "type": {
+      "description": "Name",
+      "type": "string",
+      "default": "standard",
+      "enum": ["standard", "composite"]
+    },
+    "iterations": {
+      "description": "Maximum number of iterations.",
+      "type": "number",
+      "default": 100,
+      "minimum": 2,
+      "maximum": 200
+    },
+    "reduction": {
+      "description": "Reduction factor for defect to be reached; e.g., 1e-8.",
+      "type": "number",
+      "default":1e-6,
+      "maximum": 1.0
+
+    },
+    "absolute": {
+      "description": "Absolute defect to be reached; e.g., 1e-10.",
+      "default":1e-12,
+      "type": "number"
+    },
+
+    "verbose": {
+      "description": "Print convergence rates, if true",
+      "type": "boolean",
+      "default":false
+    },
+    "supress_unsuccessful": {
+      "description": "Always accepts, if true",
+      "type": "boolean",
+      "default":false
+    }
+
+  },
+
+  "required": [ "type", "iterations", "reduction", "absolute" ]
+
+
+}
