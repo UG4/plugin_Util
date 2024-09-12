@@ -7,5 +7,17 @@ local precondDesc ={
 	overlap = true
 }
 local solverutil = SolverUtil()
+print("calling CreatePreconditioner")
 local precond =util.test.CreatePreconditioner(precondDesc, SolverUtil)
 print(precond:config_string())
+
+local lineSearchDesc = {
+                       	type			= "standard",
+                       	maxSteps		= 5,
+                       	lambdaStart		= 1,
+                       	lambdaReduce		= 0.4,
+                       	acceptBest 		= true,
+                       	checkAll		= false,
+                       	verbose         = true,
+                       }
+local ls = util.test.CreateLineSearch(lineSearchDesc)

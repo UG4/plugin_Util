@@ -33,28 +33,32 @@ end
 
 function util.test.CreateSolver(descriptor, solverutil)
 
-    -- create JSON object
-    local jschema=JSON();
-    -- TODO: JSON schema validator
 
-    local descriptor= JSON();
-    local json_util = JSON();
-    JSON_parse(descriptor, util.json.encode(convCheckDesc))
-    JSON_parse(json_util, util.json.encode(solverutil))
-    print("|"..JSON_dump(json_util).."|")
-
-    CreateSolver2dCPU1(descriptor, json_util)
-
-    return convCheck
 end
 
 function util.test.CreatePreconditioner(desc, solverutil)
 
     local jsondesc = JSON()
     JSON_parse(jsondesc, util.json.encode(desc))
-    print("|"..JSON_dump(jsondesc).."|")
+    --print("|"..JSON_dump(jsondesc).."|")
     local solverut = SolverUtil()
-    precond = CreatePreconditioner(jsondesc, solverut)
+    print("create function provider")
+    local functionProvider = SolverUtilFunctionProvider()
+    local precond = functionProvider:CreatePreconditioner(jsondesc, solverut)
     print(precond:config_string())
     return precond
+end
+
+function util.test.CreateLineSearch(desc)
+
+    local jsondesc = JSON()
+    --parse descriptor as JSON
+    JSON_parse(jsondesc, util.json.encode(desc))
+    print("|"..JSON_dump(jsondesc).."|")
+    --call our registered c++ function
+    local functionProvider = SolverUtilFunctionProvider()
+    ls = functionProvider:CreateLineSearch(jsondesc)
+    print(ls:config_string())
+    --return linsearch
+    return ls
 end

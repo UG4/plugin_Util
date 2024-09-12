@@ -33,7 +33,7 @@
 
 // Own headers.
 #include "domain_util.h"
-
+#include "solver_util_function_provider.h"
 // replace this with util_domain_dependent.h or util_algebra_dependent.h
 // to speed up compilation time
 #include "bridge/bridge.h"
@@ -139,7 +139,19 @@ static void DomainAlgebra(TRegistry& reg, string grp)
 	string suffix = GetDomainAlgebraSuffix<TDomain,TAlgebra>();
 	string tag = GetDomainAlgebraTag<TDomain,TAlgebra>();
 
+
         {
+
+            typedef SolverUtilFunctionProvider<TDomain, TAlgebra> T;
+            typedef typename TAlgebra::vector_type vector_type;
+            string name = string("SolverUtilFunctionProvider").append(suffix);
+            reg.template add_class_<T>(name, grp).add_constructor()
+                    .add_method("CreateLineSearch", &T::GetCreateLineSearch)
+                    .add_method("CreatePreconditioner", &T::GetCreatePreconditioner)
+                    .set_construct_as_smart_pointer(true);
+            reg.add_class_to_group(name, "SolverUtilFunctionProvider", tag);
+        }
+        /*{
             // This is more complicated, as the return type should be included in name.
             std::string grpname = std::string("CreatePreconditioner");
             typedef IPreconditioner<TAlgebra> T;
@@ -147,7 +159,7 @@ static void DomainAlgebra(TRegistry& reg, string grp)
               //              static_cast<SmartPtr<T>(*)(nlohmann::json&, SolverUtil<TDomain, TAlgebra>)>
                 //             (&CreatePreconditioner<TDomain, TAlgebra>), grpname);
             reg.add_function(grpname, &CreatePreconditioner<TDomain, TAlgebra>);
-        }
+        }*/
 
        // reg.add_function(grpname.append(suffix),
          //                static_cast<SmartPtr<TDomain>(*)(const std::string&, int, const std::vector<std::string> &)>
@@ -249,15 +261,19 @@ static void Algebra(Registry& reg, string grp)
     typedef typename TAlgebra::vector_type vector_type;
         {
             // This is more complicated, as the return type should be included in name.
-            std::string grpname = std::string("CreateConvCheck");
-            reg.add_function(grpname.append(suffix),
-                             static_cast<SmartPtr<StdConvCheck<vector_type>>(*)(nlohmann::json&)>
-                             (&CreateConvCheck<TAlgebra>), grpname);
+            {
+                std::string grpname = std::string("CreateConvCheck");
+                reg.add_function(grpname.append(suffix),
+                                 static_cast<SmartPtr<StdConvCheck<vector_type>>(*)(nlohmann::json &)>
+                                 (&CreateConvCheck < TAlgebra > ), grpname);
+            }
+
         }
 
 }
 
-/**
+
+    /**
  * Function called for the registration of Domain and Algebra independent parts
  * of the plugin. All Functions and Classes not depending on Domain and Algebra
  * are to be placed here when registering.

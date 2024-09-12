@@ -28,7 +28,9 @@
 namespace ug{
 namespace Util {
 
-
+    void CondAbort(bool condition, std::string message){
+        UG_ASSERT(!condition, "ERROR in util.solver: " << message);
+    }
     template<typename TAlgebra>
     SmartPtr<StdConvCheck <typename TAlgebra::vector_type>> CreateConvCheck(nlohmann::json& descriptor) {
 
@@ -307,6 +309,74 @@ namespace Util {
 // return Preconditioner
         return preconditioner;
     }
+
+    template<typename TAlgebra>
+    SmartPtr<StandardLineSearch<typename TAlgebra::vector_type>> CreateLineSearch(nlohmann::json& desc){
+        // typedef for convenience
+        typedef StandardLineSearch<typename TAlgebra::vector_type>      line_search_type;
+        SmartPtr<line_search_type> ls;
+
+        // load defaults
+        nlohmann::json json_default_lineSearch = json_predefined_defaults::solvers["lineSearch"];
+
+        // handle type of line search
+        // default
+        std::string type = "standard";
+        // input type
+        if(desc.contains("type")){
+            type = desc["type"];
+        }
+
+        if(type == "standard"){
+            // handle parameters of standard line search
+            int maxSteps = json_default_lineSearch[type]["maxSteps"];
+            if(desc.contains("maxSteps")){
+                maxSteps = desc["maxSteps"];
+            }
+            number lambdaStart = json_default_lineSearch[type]["lambdaStart"];
+            if(desc.contains("lambdaStart")){
+                lambdaStart = desc["lambdaStart"];
+            }
+            number lambdaReduce = json_default_lineSearch[type]["lambdaReduce"];
+            if(desc.contains("lambdaReduce")){
+                lambdaReduce = desc["lambdaReduce"];
+            }
+            bool acceptBest = json_default_lineSearch[type]["acceptBest"];
+            if(desc.contains("acceptBest")){
+                acceptBest = desc["acceptBest"];
+            }
+            bool checkAll = json_default_lineSearch[type]["checkAll"];
+            if(desc.contains("checkAll")){
+                checkAll = desc["checkAll"];
+            }
+            // create line search with chosen parameters
+            ls = make_sp(new line_search_type(maxSteps,
+                                              lambdaStart,
+                                              lambdaReduce,
+                                              acceptBest,
+                                              checkAll));
+            // set conditional parameters
+            if(desc.contains("verbose")){
+                bool verbose = desc["verbose"];
+                ls->set_verbose(verbose);
+            }
+            if(desc.contains("suffDesc")){
+                number suffDesc = desc["suffDesc"];
+                ls->set_suff_descent_factor(suffDesc);
+            }
+            if(desc.contains("maxDefect")){
+                number maxDefect = desc["maxDefect"];
+                ls->set_maximum_defect(maxDefect);
+            }
+
+        }
+        // force exit if line search is invalid
+        CondAbort(ls.invalid(), "Invalid line-search specified: " + type);
+
+        return ls;
+    }
+
+
         template<typename TDomain, typename TAlgebra>
         void PrepateSolverUtil(nlohmann::json& desc, nlohmann::json& solverutil){
 
@@ -319,6 +389,29 @@ namespace Util {
             }
         }
 
+/*
+* Helper class to provide c++ util functions in lua.
+* We can instaciate this object in lua via
+* local functionProvider = SolverUtilFunctionProvider()
+* and automatically get the correct templated class,
+* e.g SolverUtilFunctionProvider2dCPU1
+* this means functionprovider automatically chooses
+* the correct templated util functions!
+*/
+template<typename TDomain, typename TAlgebra>
+class SolverUtilFunctionProvider{
+public:
+    typedef typename TAlgebra::vector_type              vector_type;
+    SolverUtilFunctionProvider(){};
+
+    SmartPtr <IPreconditioner<TAlgebra>> GetCreatePreconditioner(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
+        return CreatePreconditioner<TDomain, TAlgebra>(desc, solverutil);
+    }
+
+    SmartPtr<StandardLineSearch<vector_type>> GetCreateLineSearch(nlohmann::json &desc){
+        return CreateLineSearch<TAlgebra>(desc);
+    }
+};
 } //namespace util
 } //namespace ug
 #endif //UG4_SOLVER_UTIL_H
