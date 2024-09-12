@@ -33,7 +33,6 @@
 
 // Own headers.
 #include "domain_util.h"
-#include "solver_util_function_provider.h"
 // replace this with util_domain_dependent.h or util_algebra_dependent.h
 // to speed up compilation time
 #include "bridge/bridge.h"
