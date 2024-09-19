@@ -285,10 +285,10 @@ namespace Util {
             //TODO:Duy createjac
         }
         else if(desc.contains("gs")){
-            //TODO:Duy create gs
+            //TODO:Myrto create gs
         }
         else if(desc.contains("sgs")){
-            //TODO:Duy create sgs
+            //TODO:Tim create sgs
         }
         else if(desc.contains("egs")){
             // create egs
@@ -376,7 +376,6 @@ namespace Util {
         return ls;
     }
 
-
         template<typename TDomain, typename TAlgebra>
         void PrepateSolverUtil(nlohmann::json& desc, nlohmann::json& solverutil){
 
@@ -402,6 +401,9 @@ template<typename TDomain, typename TAlgebra>
 class SolverUtilFunctionProvider{
 public:
     typedef typename TAlgebra::vector_type              vector_type;
+    typedef typename TAlgebra::matrix_type              matrix_type;
+    const static int dim = TDomain::dim;
+
     SolverUtilFunctionProvider(){};
 
     SmartPtr <IPreconditioner<TAlgebra>> GetCreatePreconditioner(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
@@ -411,6 +413,8 @@ public:
     SmartPtr<StandardLineSearch<vector_type>> GetCreateLineSearch(nlohmann::json &desc){
         return CreateLineSearch<TAlgebra>(desc);
     }
+
+
 };
 } //namespace util
 } //namespace ug

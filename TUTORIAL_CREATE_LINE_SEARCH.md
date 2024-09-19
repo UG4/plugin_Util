@@ -297,7 +297,6 @@ anschliessend muessen wir die hinzugefuegte methode im registry bekannt machen (
 Nun koennen wir `CreateLineSearch` in lua wie folgt aufrufen:  
 (1) kovertiere deskriptor (lua tabelle) in json format:
 ```lua
-
 -- we assume our lua table descriptor is desc
 local jsondesc = JSON()
 JSON_parse(jsondesc, util.json.encode(desc)
