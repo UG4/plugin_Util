@@ -285,7 +285,27 @@ namespace Util {
             //TODO:Duy createjac
         }
         else if(desc.contains("gs")){
-            //TODO:Myrto create gs
+            
+            UG_LOG("creating gauss seidel\n")
+            typedef GaussSeidel<TAlgebra> TGS;
+            SmartPtr<TGS> GS = make_sp(new TGS());
+            UG_LOG("consistentInterfaces default\n")
+            bool consistentInterfaces = json_default_preconds["gs"]["consistentInterfaces"];
+            UG_LOG("consistentInterfaces desc\n")
+            if(desc["gs"].contains("consistentInterfaces")){
+                consistentInterfaces = desc["gs"]["consistentInterfaces"];
+            }
+            UG_LOG("enable consistentInterfaces\n")
+            GS->enable_consistent_interfaces(consistentInterfaces);
+
+
+            bool overlap = json_default_preconds["gs"]["overlap"];
+            if(desc["gs"].contains("overlap")){
+                overlap = desc["gs"]["overlap"];
+            }
+            UG_LOG("enable overlap\n")
+            GS->enable_overlap(overlap);
+            preconditioner = GS.template cast_static<TPrecond>();
         }
         else if(desc.contains("sgs")){
             //TODO:Tim create sgs
