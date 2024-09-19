@@ -266,7 +266,7 @@ namespace Util {
             preconditioner = ILU.template cast_static<TPrecond>();
 
         }
-        else if(desc.contains("ilut")){
+        else if(type == "ilut"){
             // create ilut
             typedef ILUTPreconditioner<TAlgebra> TILUT;
 
@@ -280,11 +280,11 @@ namespace Util {
             // TODO: precond.set_ordering_algorithm(ordering)
 
 
-}
-        else if(desc.contains("jac")){
+        }
+        else if(type == "jac"){
             //TODO:Duy createjac
         }
-        else if(desc.contains("gs")){
+        else if(type == "gs"){
             
             UG_LOG("creating gauss seidel\n")
             typedef GaussSeidel<TAlgebra> TGS;
@@ -307,22 +307,22 @@ namespace Util {
             GS->enable_overlap(overlap);
             preconditioner = GS.template cast_static<TPrecond>();
         }
-        else if(desc.contains("sgs")){
+        else if(type == "sgs"){
             //TODO:Tim create sgs
         }
-        else if(desc.contains("egs")){
+        else if(type == "egs"){
             // create egs
         }
-        else if(desc.contains("cgs")){
+        else if(type == "cgs"){
             // create cgs
         }
-        else if(desc.contains("ssc")){
+        else if(type == "ssc"){
             //TODO:Duy create ssc
         }
-        else if(desc.contains("gmg")){
+        else if(type == "gmg"){
             // create gmg
         }
-        else if(desc.contains("schur")){
+        else if(type == "schur"){
             //TODO:Duy create schur
         }
 
