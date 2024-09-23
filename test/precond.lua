@@ -11,13 +11,19 @@ local gsDesc ={
 	consistentInterfaces = false,
 	overlap = true
 }
-
+local sgsDesc = {
+	type = "sgs",
+	consistentInterfaces = true,
+	overlap = false
+}
 local solverutil = SolverUtil()
 print("calling CreatePreconditioner (ilu)")
 local precond =util.test.CreatePreconditioner(iluDesc, SolverUtil)
 print("ilu"..precond:config_string())
 local precond =util.test.CreatePreconditioner(gsDesc, SolverUtil)
 print("gs:"..precond:config_string())
+local precond =util.test.CreatePreconditioner(sgsDesc, SolverUtil)
+print("sgs:"..precond.config_string())
 local lineSearchDesc = {
                        	type			= "standard",
                        	maxSteps		= 5,
