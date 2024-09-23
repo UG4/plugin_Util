@@ -311,16 +311,16 @@ namespace Util {
             //TODO:Tim create sgs
         }
         else if(type == "egs"){
-            // create egs
+            //TODO:Lukas
         }
         else if(type == "cgs"){
-            // create cgs
+            //TODO:Myrto
         }
         else if(type == "ssc"){
             //TODO:Duy create ssc
         }
         else if(type == "gmg"){
-            // create gmg
+            //TODO: Julian
         }
         else if(type == "schur"){
             //TODO:Duy create schur
