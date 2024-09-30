@@ -350,13 +350,17 @@ namespace ug
             }
             else if (type == "egs")
             {
-                // create egs
+                UG_LOG("creating element gauss seidel\n")
+                typedef ElementGaussSeidel<TAlgebra> TEGS;
+                SmartPtr<TEGS> EGS = make_sp(new TEGS());
+                preconditioner = EGS.template cast_static<TPrecond>();
             }
             else if (type == "cgs")
             {
+                UG_LOG("creating component gauss seidel\n")
                 typedef ComponentGaussSeidel<TAlgebra> TCGS;
                 SmartPtr<TCGS> CGS = make_sp(new TCGS());
-                preconditioner = CGS.template cast_static<TPrecond>();    
+                preconditioner = CGS.template cast_static<TPrecond>();
             }
             else if (type == "ssc")
             {

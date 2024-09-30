@@ -16,6 +16,9 @@ local sgsDesc = {
 	consistentInterfaces = true,
 	overlap = false
 }
+local egsDesc = {
+	type = "egs"
+}
 local cgsDesc = {
 	type = "cgs"
 }
@@ -27,6 +30,8 @@ local precond =util.test.CreatePreconditioner(gsDesc, SolverUtil)
 print("gs:"..precond:config_string())
 local precond =util.test.CreatePreconditioner(sgsDesc, SolverUtil)
 print("sgs:"..precond.config_string())
+local precond =util.test.CreatePreconditioner(egsDesc, SolverUtil)
+print("egs:"..precond.config_string())
 local precond =util.test.CreatePreconditioner(cgsDesc, SolverUtil)
 print("cgs:"..precond.config_string())
 local lineSearchDesc = {
