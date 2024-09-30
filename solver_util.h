@@ -305,7 +305,6 @@ namespace ug
             }
             else if (type == "gs")
             {
-
                 UG_LOG("creating gauss seidel\n")
                 typedef GaussSeidel<TAlgebra> TGS;
                 SmartPtr<TGS> GS = make_sp(new TGS());
@@ -355,7 +354,9 @@ namespace ug
             }
             else if (type == "cgs")
             {
-                // create cgs
+                typedef ComponentGaussSeidel<TAlgebra> TCGS;
+                SmartPtr<TCGS> CGS = make_sp(new TCGS());
+                preconditioner = CGS.template cast_static<TPrecond>();    
             }
             else if (type == "ssc")
             {
