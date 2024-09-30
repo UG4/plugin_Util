@@ -305,7 +305,6 @@ namespace ug
             }
             else if (type == "gs")
             {
-
                 UG_LOG("creating gauss seidel\n")
                 typedef GaussSeidel<TAlgebra> TGS;
                 SmartPtr<TGS> GS = make_sp(new TGS());
@@ -330,7 +329,7 @@ namespace ug
             }
             else if (type == "sgs")
             {
-                UG_LOG("creating symetric gauss seidel\n")
+                UG_LOG("creating symmetric gauss seidel\n")
                 typedef SymmetricGaussSeidel<TAlgebra> AGS;
                 SmartPtr<AGS> SGS = make_sp(new AGS());
                 bool consistentInterfaces = json_default_preconds["sgs"]["consistentInterfaces"];
@@ -341,21 +340,27 @@ namespace ug
                 }
                 SGS->enable_consistent_interfaces(consistentInterfaces);
 
-                bool overlap = json_default_preconds["gs"]["overlap"];
-                if (desc["gs"].contains("overlap"))
+                bool overlap = json_default_preconds["sgs"]["overlap"];
+                if (desc["sgs"].contains("overlap"))
                 {
-                    overlap = desc["gs"]["overlap"];
+                    overlap = desc["sgs"]["overlap"];
                 }
                 SGS->enable_overlap(overlap);
                 preconditioner = SGS.template cast_static<TPrecond>();
             }
             else if (type == "egs")
             {
-                // create egs
+                UG_LOG("creating element gauss seidel\n")
+                typedef ElementGaussSeidel<TDomain, TAlgebra> TEGS;
+                SmartPtr<TEGS> EGS = make_sp(new TEGS());
+                preconditioner = EGS.template cast_static<TPrecond>();
             }
             else if (type == "cgs")
-            {
-                // create cgs
+            {//Component Gauss Seidel??
+                //UG_LOG("creating component gauss seidel\n")
+                //typedef ComponentGaussSeidel<TAlgebra> TCGS;
+                //SmartPtr<TCGS> CGS = make_sp(new TCGS());
+                //preconditioner = CGS.template cast_static<TPrecond>();
             }
             else if (type == "ssc")
             {
