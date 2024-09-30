@@ -334,7 +334,7 @@ namespace ug
                 typedef SymmetricGaussSeidel<TAlgebra> AGS;
                 SmartPtr<AGS> SGS = make_sp(new AGS());
                 bool consistentInterfaces = json_default_preconds["sgs"]["consistentInterfaces"];
-                if (desc["sgs".contains("consistentInterfaces")])
+                if (desc["sgs"].contains("consistentInterfaces"))
                 {
                     consistentInterfaces = desc["sgs"]["consistentInterfaces"];
                     SGS->enable_consistent_interfaces(consistentInterfaces);
