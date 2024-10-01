@@ -6,6 +6,10 @@ local iluDesc ={
 	damping = 0.1,
 	overlap = true
 }
+local jacDesc ={
+	type = "jac",
+	damping = 0.66
+}
 local gsDesc ={
 	type = "gs",
 	consistentInterfaces = false,
@@ -13,27 +17,29 @@ local gsDesc ={
 }
 local sgsDesc = {
 	type = "sgs",
-	consistentInterfaces = true,
+	consistentInterfaces = false,
 	overlap = false
 }
 local egsDesc = {
 	type = "egs"
 }
-local cgsDesc = {
-	type = "cgs"
-}
+--local cgsDesc = {
+--	type = "cgs"
+--}
 local solverutil = SolverUtil()
 print("calling CreatePreconditioner (ilu)")
-local precond =util.test.CreatePreconditioner(iluDesc, SolverUtil)
+local precond = util.test.CreatePreconditioner(iluDesc, SolverUtil)
 print("ilu"..precond:config_string())
-local precond =util.test.CreatePreconditioner(gsDesc, SolverUtil)
+local precond = util.test.CreatePreconditioner(jacDesc, SolverUtil)
+print("jac:"..precond:config_string())
+local precond = util.test.CreatePreconditioner(gsDesc, SolverUtil)
 print("gs:"..precond:config_string())
-local precond =util.test.CreatePreconditioner(sgsDesc, SolverUtil)
+local precond = util.test.CreatePreconditioner(sgsDesc, SolverUtil)
 print("sgs:"..precond.config_string())
-local precond =util.test.CreatePreconditioner(egsDesc, SolverUtil)
+local precond = util.test.CreatePreconditioner(egsDesc, SolverUtil)
 print("egs:"..precond.config_string())
-local precond =util.test.CreatePreconditioner(cgsDesc, SolverUtil)
-print("cgs:"..precond.config_string())
+--local precond = util.test.CreatePreconditioner(cgsDesc, SolverUtil)
+--print("cgs:"..precond.config_string())
 local lineSearchDesc = {
                        	type			= "standard",
                        	maxSteps		= 5,

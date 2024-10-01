@@ -301,7 +301,19 @@ namespace ug
             }
             else if (type == "jac")
             {
-                // TODO:Duy createjac
+                UG_LOG("creating jacobi\n")
+                typedef Jacobi<TAlgebra> TJAC;
+                SmartPtr<TJAC> JAC = make_sp(new TJAC());
+                UG_LOG("damping default\n")
+                number damping = json_default_preconds["jac"]["damping"];
+                UG_LOG("damping desc\n")
+                if (desc["jac"].contains("damping"))
+                {
+                    damping = desc["jac"]["damping"];
+                }
+                UG_LOG("set damping\n")
+                JAC->set_damp(damping);
+                preconditioner = JAC.template cast_static<TPrecond>();
             }
             else if (type == "gs")
             {
@@ -330,8 +342,8 @@ namespace ug
             else if (type == "sgs")
             {
                 UG_LOG("creating symmetric gauss seidel\n")
-                typedef SymmetricGaussSeidel<TAlgebra> AGS;
-                SmartPtr<AGS> SGS = make_sp(new AGS());
+                typedef SymmetricGaussSeidel<TAlgebra> TSGS;
+                SmartPtr<TSGS> SGS = make_sp(new TSGS());
                 bool consistentInterfaces = json_default_preconds["sgs"]["consistentInterfaces"];
                 if (desc["sgs"].contains("consistentInterfaces"))
                 {
@@ -356,9 +368,9 @@ namespace ug
                 preconditioner = EGS.template cast_static<TPrecond>();
             }
             else if (type == "cgs")
-            {//Component Gauss Seidel??
+            {//Component Gauss Seidel in progress
                 //UG_LOG("creating component gauss seidel\n")
-                //typedef ComponentGaussSeidel<TAlgebra> TCGS;
+                //typedef ComponentGaussSeidel<TDomain, TAlgebra> TCGS;
                 //SmartPtr<TCGS> CGS = make_sp(new TCGS());
                 //preconditioner = CGS.template cast_static<TPrecond>();
             }
