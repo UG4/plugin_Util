@@ -39,7 +39,15 @@
 set(pluginName	Util)
 set(SOURCES		domain_util.cpp util_plugin.cpp)
 
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 14)
+
+# Note: 
+# In C++ 17, std::unary_function has been removed. Unfortunately, UG4's boost is outdated... 
+# FYI Starting with 1.76.0 Configure boost:
+# https://www.boost.org/doc/libs/1_76_0/libs/config/doc/html/boost_config/boost_macro_reference.html 
+# set (CMAKE_CXX_STANDARD 17)
+# add_compile_definitions(BOOST_NO_CXX98_FUNCTION_BASE)
+
 ################################################################################
 # The code below doesn't have to be changed (usually)
 ################################################################################
