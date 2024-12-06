@@ -138,7 +138,7 @@ static void DomainAlgebra(TRegistry& reg, string grp)
 	string suffix = GetDomainAlgebraSuffix<TDomain,TAlgebra>();
 	string tag = GetDomainAlgebraTag<TDomain,TAlgebra>();
 
-
+#ifdef UG_USE_JSON
         {
 
             typedef SolverUtilFunctionProvider<TDomain, TAlgebra> T;
@@ -150,6 +150,7 @@ static void DomainAlgebra(TRegistry& reg, string grp)
                     .set_construct_as_smart_pointer(true);
             reg.add_class_to_group(name, "SolverUtilFunctionProvider", tag);
         }
+#endif
         /*{
             // This is more complicated, as the return type should be included in name.
             std::string grpname = std::string("CreatePreconditioner");
@@ -163,6 +164,7 @@ static void DomainAlgebra(TRegistry& reg, string grp)
        // reg.add_function(grpname.append(suffix),
          //                static_cast<SmartPtr<TDomain>(*)(const std::string&, int, const std::vector<std::string> &)>
            //              (&CreateDomain<TDomain>), grpname);
+#ifdef UG_USE_JSON
         {
             //typedef Domain<dim> domain_type;
             typedef SolverUtil<TDomain, TAlgebra> T;
@@ -173,6 +175,7 @@ static void DomainAlgebra(TRegistry& reg, string grp)
                     .set_construct_as_smart_pointer(true);
             reg.add_class_to_group(name, "SolverUtil", tag);
         }
+#endif
 
     }
 
@@ -251,23 +254,26 @@ static void Dimension(TRegistry& reg, string grp)
  * @param reg				registry
  * @param parentGroup		group for sorting of functionality
  */
-template <typename TAlgebra>
-static void Algebra(Registry& reg, string grp)
+template <typename TAlgebra, typename TRegistry=ug::bridge::Registry>
+static void Algebra(TRegistry& reg, string grp)
 {
-//	useful defines
+	//	useful defines
 	string suffix = GetAlgebraSuffix<TAlgebra>();
 	string tag = GetAlgebraTag<TAlgebra>();
-    typedef typename TAlgebra::vector_type vector_type;
-        {
-            // This is more complicated, as the return type should be included in name.
-            {
-                std::string grpname = std::string("CreateConvCheck");
-                reg.add_function(grpname.append(suffix),
-                                 static_cast<SmartPtr<StdConvCheck<vector_type>>(*)(nlohmann::json &)>
-                                 (&CreateConvCheck < TAlgebra > ), grpname);
-            }
+	typedef typename TAlgebra::vector_type vector_type;
 
-        }
+#ifdef UG_USE_JSON
+	{
+		// This is more complicated, as the return type should be included in name.
+		{
+			std::string grpname = std::string("CreateConvCheck");
+			reg.add_function(grpname.append(suffix),
+					static_cast<SmartPtr<StdConvCheck<vector_type>>(*)(nlohmann::json &)>
+			(&CreateConvCheck < TAlgebra > ), grpname);
+		}
+
+	}
+#endif
 
 }
 
@@ -296,7 +302,7 @@ static void Common(Registry& reg, string grp)
 
 
 template <typename TRegistry=ug::bridge::Registry>
-void RegisterBridge_Util(TRegistry& reg, string grp)
+void RegisterBridge_Util(TRegistry* reg, string grp)
 {
 	grp.append("/Util");
 	typedef Util::Functionality Functionality;
@@ -305,16 +311,16 @@ void RegisterBridge_Util(TRegistry& reg, string grp)
 #ifndef UG_USE_PYBIND11
 		//RegisterCommon<Functionality>(*reg,grp);
 		//RegisterDimensionDependent<Functionality>(*reg,grp);
-        RegisterDomainAlgebraDependent<Functionality>(reg,grp);
-        RegisterDomainDependent<Functionality>(reg,grp);
-		RegisterAlgebraDependent<Functionality>(reg,grp);
+        RegisterDomainAlgebraDependent<Functionality>(*reg,grp);
+        RegisterDomainDependent<Functionality>(*reg,grp);
+		RegisterAlgebraDependent<Functionality>(*reg,grp);
 
 #else
 		//RegisterCommon<Functionality, TRegistry>(*reg,grp);
 		//RegisterDimensionDependent<Functionality, TRegistry>(*reg,grp);
-		RegisterDomainDependent<Functionality, TRegistry>(reg,grp);
-		RegisterAlgebraDependent<Functionality>(*reg,grp);
-		RegisterDomainAlgebraDependent<Functionality>(*reg,grp);
+		RegisterDomainDependent<Functionality, TRegistry>(*reg,grp);
+		RegisterAlgebraDependent<Functionality, TRegistry>(*reg,grp);
+		RegisterDomainAlgebraDependent<Functionality, TRegistry>(*reg,grp);
 #endif
 
 	}
@@ -328,7 +334,7 @@ void RegisterBridge_Util(TRegistry& reg, string grp)
 extern "C" void
 InitUGPlugin_Util(Registry* reg, string grp)
 {
-	RegisterBridge_Util(*reg, grp);
+	RegisterBridge_Util(reg, grp);
 }
 
 extern "C" UG_API void
@@ -340,7 +346,7 @@ FinalizeUGPlugin_Util()
 namespace UtilBridge{
 	void InitUGPlugin(ug::pybind::Registry* reg, string grp)
 	{
-		RegisterBridge_Util<ug::pybind::Registry>(*reg, grp);
+		RegisterBridge_Util<ug::pybind::Registry>(reg, grp);
 	}
 }
 #endif

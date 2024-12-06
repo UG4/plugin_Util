@@ -5,6 +5,9 @@
 #ifndef UG4_SOLVER_UTIL_H
 #define UG4_SOLVER_UTIL_H
 
+#ifdef UG_USE_JSON
+
+
 #include <nlohmann/json.hpp>
 
 #include "common/common.h"
@@ -438,4 +441,6 @@ public:
 };
 } //namespace util
 } //namespace ug
+
+#endif // UG_USE_JSON
 #endif //UG4_SOLVER_UTIL_H
