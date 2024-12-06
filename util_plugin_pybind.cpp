@@ -13,7 +13,7 @@ PYBIND11_MODULE(pyutil, m)
 	ug::pybind::Registry registry(m);
 	std::string name("Utilities");
 
-	ug::bridge::UtilBridge::InitUGPlugin(&registry, name);
+	ug::Util::InitUGPlugin(&registry, name);
 }
 
 #endif

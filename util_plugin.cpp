@@ -302,7 +302,7 @@ static void Common(Registry& reg, string grp)
 
 
 template <typename TRegistry=ug::bridge::Registry>
-void RegisterBridge_Util(TRegistry* reg, string grp)
+void RegisterBridge_Util_(TRegistry* reg, string grp)
 {
 	grp.append("/Util");
 	typedef Util::Functionality Functionality;
@@ -334,7 +334,7 @@ void RegisterBridge_Util(TRegistry* reg, string grp)
 extern "C" void
 InitUGPlugin_Util(Registry* reg, string grp)
 {
-	RegisterBridge_Util(reg, grp);
+	RegisterBridge_Util_(reg, grp);
 }
 
 extern "C" UG_API void
@@ -343,10 +343,10 @@ FinalizeUGPlugin_Util()
 
 
 #ifdef UG_USE_PYBIND11 // Expose for pybind11.
-namespace UtilBridge{
+namespace Util {
 	void InitUGPlugin(ug::pybind::Registry* reg, string grp)
 	{
-		RegisterBridge_Util<ug::pybind::Registry>(reg, grp);
+		RegisterBridge_Util_<ug::pybind::Registry>(reg, grp);
 	}
 }
 #endif
