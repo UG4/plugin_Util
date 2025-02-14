@@ -1,4 +1,4 @@
-print("load script")
+print("***load script")
 ug_load_script("plugins/plugin_Util/lua/lua-include.lua")
 InitUG(2, AlgebraType("CPU", 1))
 local iluDesc ={
@@ -20,26 +20,33 @@ local sgsDesc = {
 	consistentInterfaces = false,
 	overlap = false
 }
+print("test")
 local egsDesc = {
 	type = "egs"
 }
---local cgsDesc = {
---	type = "cgs"
---}
+local cgsDesc = {
+	type = "cgs",
+	alpha = 1.0,
+	beta = 1.0,
+	weights = false,
+	relax = 1.0
+	
+}
+
 local solverutil = SolverUtil()
 print("calling CreatePreconditioner (ilu)")
 local precond = util.test.CreatePreconditioner(iluDesc, SolverUtil)
-print("ilu"..precond:config_string())
+print("ilu: "..precond:config_string())
 local precond = util.test.CreatePreconditioner(jacDesc, SolverUtil)
-print("jac:"..precond:config_string())
+print("jac: "..precond:config_string())
 local precond = util.test.CreatePreconditioner(gsDesc, SolverUtil)
-print("gs:"..precond:config_string())
+print("gs: "..precond:config_string())
 local precond = util.test.CreatePreconditioner(sgsDesc, SolverUtil)
-print("sgs:"..precond:config_string())
+print("sgs: "..precond:config_string())
 local precond = util.test.CreatePreconditioner(egsDesc, SolverUtil)
-print("egs:"..precond:config_string())
---local precond = util.test.CreatePreconditioner(cgsDesc, SolverUtil)
---print("cgs:"..precond.config_string())
+print("egs: "..precond:config_string())
+local precond = util.test.CreatePreconditioner(cgsDesc, SolverUtil)
+print("cgs: "..precond:config_string())
 local lineSearchDesc = {
                        	type			= "standard",
                        	maxSteps		= 5,
