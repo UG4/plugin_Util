@@ -39,6 +39,9 @@ end
 function util.test.CreatePreconditioner(desc, solverutil)
 
     local jsondesc = JSON()
+    if solverutil.hasComponent("approxSpace") then
+        print(solverutil.getComponentAs("approxSpace"))
+    end
     JSON_parse(jsondesc, util.json.encode(desc))
     --print("|"..JSON_dump(jsondesc).."|")
     local solverut = SolverUtil()

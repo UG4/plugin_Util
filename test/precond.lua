@@ -1,5 +1,6 @@
 print("load script")
-ug_load_script("plugins/plugin_Util/lua/lua-include.lua")
+ug_load_script("ug_util.lua")
+ug_load_script("../lua/lua-include.lua")
 InitUG(2, AlgebraType("CPU", 1))
 local iluDesc ={
 	type = "ilu",
@@ -23,6 +24,20 @@ local sgsDesc = {
 local egsDesc = {
 	type = "egs"
 }
+
+dom = util.CreateDomain("grid.ugx", 1, {})
+
+local gmgDesc = {
+	type = "gmg",
+	approxSpace = approxSpace,
+	smoother = {type = "sgs"},
+	preSmooth = 1,
+	postSmooth = 1, 
+	baseLevel = 0,
+	baseSolver = "lu",
+	rap = false
+}
+
 --local cgsDesc = {
 --	type = "cgs"
 --}
@@ -38,8 +53,8 @@ local precond = util.test.CreatePreconditioner(sgsDesc, SolverUtil)
 print("sgs:"..precond:config_string())
 local precond = util.test.CreatePreconditioner(egsDesc, SolverUtil)
 print("egs:"..precond:config_string())
---local precond = util.test.CreatePreconditioner(cgsDesc, SolverUtil)
---print("cgs:"..precond.config_string())
+local precond = util.test.CreatePreconditioner(gmgDesc, SolverUtil)
+print("cgs:"..precond.config_string())
 local lineSearchDesc = {
                        	type			= "standard",
                        	maxSteps		= 5,

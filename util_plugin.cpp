@@ -145,7 +145,11 @@ namespace ug
                     typedef SolverUtilFunctionProvider<TDomain, TAlgebra> T;
                     typedef typename TAlgebra::vector_type vector_type;
                     string name = string("SolverUtilFunctionProvider").append(suffix);
-                    reg.template add_class_<T>(name, grp).add_constructor().add_method("CreateLineSearch", &T::GetCreateLineSearch).add_method("CreatePreconditioner", &T::GetCreatePreconditioner).set_construct_as_smart_pointer(true);
+                    reg.template add_class_<T>(name, grp)
+                        .add_constructor()
+                        .add_method("CreateLineSearch", &T::GetCreateLineSearch)
+                        .add_method("CreatePreconditioner", &T::GetCreatePreconditioner)
+                        .set_construct_as_smart_pointer(true);
                     reg.add_class_to_group(name, "SolverUtilFunctionProvider", tag);
                 }
                 /*{
@@ -166,7 +170,9 @@ namespace ug
                     typedef SolverUtil<TDomain, TAlgebra> T;
 
                     string name = string("SolverUtil").append(suffix);
-                    reg.template add_class_<T>(name, grp).add_constructor().set_construct_as_smart_pointer(true);
+                    reg.template add_class_<T>(name, grp)
+                        .add_constructor()
+                        .set_construct_as_smart_pointer(true);
                     reg.add_class_to_group(name, "SolverUtil", tag);
                 }
             }
