@@ -24,6 +24,7 @@
 #include "lib_algebra/operator/preconditioner/block_gauss_seidel.h"
 #include "lib_algebra/operator/preconditioner/gauss_seidel.h"
 #include "lib_disc/operator/linear_operator/element_gauss_seidel/element_gauss_seidel.h"
+#include "lib_disc/operator/linear_operator/element_gauss_seidel/component_gauss_seidel.h"
 #include "lib_disc/operator/linear_operator/multi_grid_solver/mg_solver.h"
 #include "lib_disc/operator/non_linear_operator/newton_solver/newton.h"
 namespace ug
@@ -95,6 +96,7 @@ namespace ug
             SmartPtr<SymmetricGaussSeidel<TAlgebra>>,
             SmartPtr<GaussSeidel<TAlgebra>>,
             SmartPtr<ElementGaussSeidel<TDomain, TAlgebra>>,
+            SmartPtr<ComponentGaussSeidel<TDomain, TAlgebra>>,
             SmartPtr<NewtonSolver<TAlgebra>>,
             SmartPtr<AssembledMultiGridCycle<TDomain, TAlgebra>>
             // missing ElementGaussSeidel
@@ -323,6 +325,7 @@ namespace ug
                 typedef GaussSeidel<TAlgebra> TGS;
                 SmartPtr<TGS> GS = make_sp(new TGS());
                 UG_LOG("consistentInterfaces default\n")
+
                 bool consistentInterfaces = json_default_preconds["gs"]["consistentInterfaces"];
                 UG_LOG("consistentInterfaces desc\n")
                 if (desc["gs"].contains("consistentInterfaces"))
@@ -369,11 +372,63 @@ namespace ug
                 preconditioner = EGS.template cast_static<TPrecond>();
             }
             else if (type == "cgs")
-            { // Component Gauss Seidel in progress
-              // UG_LOG("creating component gauss seidel\n")
-              // typedef ComponentGaussSeidel<TDomain, TAlgebra> TCGS;
-              // SmartPtr<TCGS> CGS = make_sp(new TCGS());
-              // preconditioner = CGS.template cast_static<TPrecond>();
+            {
+                UG_LOG("creating component gauss seidel\n")
+                std::vector<std::string> vFullRowCmp;
+                typedef ComponentGaussSeidel<TDomain, TAlgebra> TCGS;
+
+                number relax = 1.0;
+                if (json_default_preconds.contains("cgs") && json_default_preconds["cgs"].contains("relax"))
+                {
+                    relax = json_default_preconds["cgs"]["relax"];
+                }
+                else if (desc["cgs"].contains("relax"))
+                {
+                    relax = desc["cgs"]["relax"];
+                }
+
+                // UG_LOG("json_default_preconds: " << json_default_preconds.dump(4) << "\n");
+                // UG_LOG("desc: " << desc.dump(4) << "\n");
+
+                SmartPtr<TCGS> CGS = make_sp(new TCGS(relax, vFullRowCmp));
+
+                number alpha = 1.0;
+                if (json_default_preconds.contains("cgs") && json_default_preconds["cgs"].contains("alpha"))
+                {
+                    relax = json_default_preconds["cgs"]["alpha"];
+                }
+                else if (desc["cgs"].contains("alpha"))
+                {
+                    relax = desc["cgs"]["alpha"];
+                }
+                UG_LOG("set alpha\n")
+                CGS->set_alpha(alpha);
+
+                number beta = 1.0;
+                if (json_default_preconds.contains("cgs") && json_default_preconds["cgs"].contains("beta"))
+                {
+                    relax = json_default_preconds["cgs"]["beta"];
+                }
+                else if (desc["cgs"].contains("beta"))
+                {
+                    relax = desc["cgs"]["beta"];
+                }
+                UG_LOG("set beta\n")
+                CGS->set_beta(beta);
+
+                bool weights = false;
+                if (json_default_preconds.contains("cgs") && json_default_preconds["cgs"].contains("weights"))
+                {
+                    relax = json_default_preconds["cgs"]["weights"];
+                }
+                else if (desc["cgs"].contains("weights"))
+                {
+                    relax = desc["cgs"]["weights"];
+                }
+                UG_LOG("enable weights\n")
+                CGS->set_weights(weights);
+
+                preconditioner = CGS.template cast_static<TPrecond>();
             }
             else if (type == "ssc")
             {
