@@ -27,6 +27,11 @@
 #include "lib_disc/operator/linear_operator/element_gauss_seidel/component_gauss_seidel.h"
 #include "lib_disc/operator/linear_operator/multi_grid_solver/mg_solver.h"
 #include "lib_disc/operator/non_linear_operator/newton_solver/newton.h"
+#include "lib_algebra/operator/linear_solver/cg.h"
+#include "lib_algebra/operator/linear_solver/bicgstab.h"
+#include "lib_algebra/operator/linear_solver/gmres.h"
+#include "lib_algebra/operator/linear_solver/agglomerating_solver.h"
+#include "lib_algebra/operator/linear_solver/lu.h"
 namespace ug
 {
     namespace Util
@@ -98,8 +103,9 @@ namespace ug
             SmartPtr<ElementGaussSeidel<TDomain, TAlgebra>>,
             SmartPtr<ComponentGaussSeidel<TDomain, TAlgebra>>,
             SmartPtr<NewtonSolver<TAlgebra>>,
-            SmartPtr<AssembledMultiGridCycle<TDomain, TAlgebra>>
-            // missing ElementGaussSeidel
+            SmartPtr<AssembledMultiGridCycle<TDomain, TAlgebra>>,
+            SmartPtr<LinearSolver<typename TAlgebra::vector_type>>
+
             >;
 
         template <typename TDomain, typename TAlgebra>
@@ -179,21 +185,20 @@ namespace ug
         }
 
         template <typename TDomain, typename TAlgebra>
-        SmartPtr<LinearSolver<typename TAlgebra::vector_type>> CreateLinearSolver(nlohmann::json &desc,
-                                                                                  SolverUtil<TDomain, TAlgebra> solverutil)
-        {
+        SmartPtr<LinearSolver<typename TAlgebra::vector_type>>
+        CreateLinearSolver(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> solverutil){
             typedef typename TAlgebra::vector_type TVector;
             typedef LinearSolver<TVector> TLinSolv;
+            SmartPtr<TLinSolv> linSolver;
 
-            // TODO: is preset
+            // load defaults
+            nlohmann::json json_default_linearSolver = json_predefined_defaults::solvers["linearSolver"];
 
-            bool create_precond = false;
-            bool create_conv_check = false;
+            bool createPrecond = false;
+            bool createConvCheck = false;
 
             // if no descriptor given, create default linear solver
-            if (!desc.contains("LinearSolver"))
-            {
-
+            if (!desc.contains("LinearSolver")){
                 SmartPtr<ILU<TAlgebra>> ilu = make_sp<ILU<TAlgebra>>(new ILU<TAlgebra>());
                 SmartPtr<StdConvCheck<TVector>> convCheck = make_sp<StdConvCheck<TVector>>(
                     new StdConvCheck<TVector>(100, 1e-9, 1e-12));
@@ -202,14 +207,95 @@ namespace ug
                 default_linear_solver->set_preconditioner(ilu);
                 return default_linear_solver;
             }
+
+            nlohmann::json myprecond;
+            nlohmann::json conv_Check;
+
+            // Standard-Solver-Typ
+            std::string type = desc["type"];
+            if (type == "linear"){
+                // create linear
+                linSolver = make_sp(new TLinSolv());
+                createPrecond = true;
+                createConvCheck = true;
+
+                //configure linear
+                myprecond = json_default_linearSolver[type]["precond"];
+                if(desc.contains("precond")){
+                    myprecond = desc["precond"];
+                }
+                conv_Check = json_default_linearSolver[type]["convCheck"];
+                if(desc.contains("convCheck")){
+                    conv_Check = desc["convCheck"];
+                }
+            }
+            else if (type == "cg"){
+                typedef CG<TVector> CGSolver;
+                SmartPtr<CGSolver> cg = make_sp(new CGSolver());
+                linSolver = cg.template cast_static<TLinSolv>();
+        		createPrecond = true;
+        		createConvCheck = true;
+    		}
+    		else if (type == "bicgstab"){
+        		linSolver = make_sp(new BiCGStab<TVector>());
+        		createPrecond = true;
+        		createConvCheck = true;
+    		}
+    		else if (type == "gmres"){
+    		    int restart = json_default_linearSolver[type]["restart"];
+        		if (desc.contains("restart")){
+            		restart = desc["restart"];
+        		}
+        		linSolver = make_sp(new GMRES<TVector>(restart));
+        		createPrecond = true;
+        		createConvCheck = true;
+    		}
+            else if (type == "lu"){
+        	// TODO: Implement AgglomeratingSolver and HasClassGroup
+        	// if (HasClassGroup("SuperLU")) {
+            // linSolver = make_sp(new AgglomeratingSolver<TVector>(SuperLU()));
+            // }
+        	// else {
+            // linSolver = make_sp(new AgglomeratingSolver<TVector>(LU()));
+            // }
+    		}
+    		else if (type == "uglu"){
+        		// TODO: Implement AgglomeratingSolver
+        		// linSolver = make_sp(new AgglomeratingSolver<TVector>(LU()));
+    		}
+    		else if (type == "superlu"){
+        		// TODO: Implement AgglomeratingSolver
+        		// linSolver = make_sp(new AgglomeratingSolver<TVector>(SuperLU()));
+    		}
+    		else{
+        		UG_THROW("Invalid linear solver specified: " << type);
+    		}
+
+    		// Checks for a valid solver
+    		CondAbort(linSolver.invalid(), "Invalid linear solver specified: " + type);
+
+            // Preconditioner
+    		if (createPrecond){
+        		SmartPtr<IPreconditioner<TAlgebra>> preconditioner = CreatePreconditioner(myprecond, solverutil);
+        		linSolver->set_preconditioner(preconditioner);
+    		}
+
+    		// Convergence Check
+    		if (createConvCheck){
+
+        		SmartPtr<StdConvCheck<TVector>> convCheck = CreateConvCheck<TAlgebra>(conv_Check);
+        		linSolver->set_convergence_check(convCheck);
+    		}
+
+        return linSolver;
         }
 
         template <typename TDomain, typename TAlgebra>
-        SmartPtr<ILinearIterator<typename TAlgebra::vector_type>>
+        SmartPtr<IPreconditioner<TAlgebra>>
         CreatePreconditioner(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil)
         {
             typedef typename TAlgebra::vector_type TVector;
-            typedef ILinearIterator<TVector> TPrecond;
+            typedef IPreconditioner<TAlgebra> TPrecond;
 
             // TODO: Implement preconditioner creation behavior based on 'desc' and 'solverutil'
             // TODO: Check if preset
@@ -435,7 +521,7 @@ namespace ug
                 // TODO:Duy create ssc
             }
             else if (type == "gmg")
-            {
+            {/*
 
                 UG_LOG("Creating Geometric MultiGrid (GMG)\n");
 
@@ -640,7 +726,7 @@ namespace ug
                     }
                 }
 
-                preconditioner = GMG.template cast_static<TPrecond>();
+                preconditioner = GMG.template cast_static<TPrecond>();*/
             }
             else if (type == "schur")
             {
