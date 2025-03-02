@@ -10,10 +10,12 @@
 #include "common/common.h"
 #include "common/log.h"
 #include "common/util/smart_pointer.h"
+#include "common/util/plugin_util.h"
 #include <memory>
 #include <unordered_map>
 #include <variant>
 #include <stdexcept>
+#include "registry/registry.h"
 #include "lib_algebra/operator/convergence_check.h"
 #include "lib_algebra/operator/linear_solver/linear_solver.h"
 // include solver components
@@ -32,6 +34,7 @@
 #include "lib_algebra/operator/linear_solver/gmres.h"
 #include "lib_algebra/operator/linear_solver/agglomerating_solver.h"
 #include "lib_algebra/operator/linear_solver/lu.h"
+#include "../SuperLU6/super_lu.h"
 namespace ug
 {
     namespace Util
@@ -219,7 +222,7 @@ namespace ug
                 createPrecond = true;
                 createConvCheck = true;
 
-                //configure linear
+                // configure linear
                 myprecond = json_default_linearSolver[type]["precond"];
                 if(desc.contains("precond")){
                     myprecond = desc["precond"];
@@ -230,18 +233,43 @@ namespace ug
                 }
             }
             else if (type == "cg"){
-                typedef CG<TVector> CGSolver;
-                SmartPtr<CGSolver> cg = make_sp(new CGSolver());
-                linSolver = cg.template cast_static<TLinSolv>();
+                // create CGSolver
+                typedef CG<TVector> TCGSolver;
+                SmartPtr<TCGSolver> CG = make_sp(new TCGSolver());
+                linSolver = CG.template cast_static<TLinSolv>();
+
+                myprecond = json_default_linearSolver[type]["precond"];
+                if(desc.contains("precond")){
+                    myprecond = desc["precond"];
+                }
+                conv_Check = json_default_linearSolver[type]["convCheck"];
+                if(desc.contains("convCheck")){
+                    conv_Check = desc["convCheck"];
+                }
+
         		createPrecond = true;
         		createConvCheck = true;
     		}
     		else if (type == "bicgstab"){
-        		linSolver = make_sp(new BiCGStab<TVector>());
+                // create BiCGStabSolver
+                typedef BiCGStab<TVector> TBiCGStabSolver;
+                SmartPtr<TBiCGStabSolver> BICGSTAB = make_sp(new TBiCGStabSolver());
+                linSolver = BICGSTAB.template cast_static<TLinSolv>();
+
+                myprecond = json_default_linearSolver[type]["precond"];
+                if(desc.contains("precond")){
+                    myprecond = desc["precond"];
+                }
+                conv_Check = json_default_linearSolver[type]["convCheck"];
+                if(desc.contains("convCheck")){
+                    conv_Check = desc["convCheck"];
+                }
+
         		createPrecond = true;
         		createConvCheck = true;
     		}
     		else if (type == "gmres"){
+                // create gmres
     		    int restart = json_default_linearSolver[type]["restart"];
         		if (desc.contains("restart")){
             		restart = desc["restart"];
@@ -251,21 +279,26 @@ namespace ug
         		createConvCheck = true;
     		}
             else if (type == "lu"){
-        	// TODO: Implement AgglomeratingSolver and HasClassGroup
-        	// if (HasClassGroup("SuperLU")) {
-            // linSolver = make_sp(new AgglomeratingSolver<TVector>(SuperLU()));
-            // }
-        	// else {
-            // linSolver = make_sp(new AgglomeratingSolver<TVector>(LU()));
-            // }
+        	    // AgglomeratingSolver and HasClassGroup
+				bool ScriptHasClassGroup(const char* classname);
+        	    if (ScriptHasClassGroup("SuperLU")){
+                	linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new SuperLUSolver<TAlgebra>())));
+                	}
+        	    else{
+                    linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new LU<TAlgebra>())));
+                }
     		}
     		else if (type == "uglu"){
-        		// TODO: Implement AgglomeratingSolver
+        		// TODO: Implement LU_solver(LU())
         		// linSolver = make_sp(new AgglomeratingSolver<TVector>(LU()));
     		}
     		else if (type == "superlu"){
-        		// TODO: Implement AgglomeratingSolver
-        		// linSolver = make_sp(new AgglomeratingSolver<TVector>(SuperLU()));
+        		// AgglomeratingSolver(SuperLU())
+                typedef AgglomeratingSolver<TAlgebra> TAgglomeratingSolver;
+                typedef TAlgebra vector_type;
+                SmartPtr<ILinearOperatorInverse<vector_type, vector_type>> linOpInverse = make_sp(new SuperLUSolver<TAlgebra>());
+				SmartPtr<TAgglomeratingSolver> SuperLU = make_sp(new TAgglomeratingSolver(linOpInverse));
+                linSolver = SuperLU.template cast_static<TLinSolv>();
     		}
     		else{
         		UG_THROW("Invalid linear solver specified: " << type);
@@ -282,7 +315,6 @@ namespace ug
 
     		// Convergence Check
     		if (createConvCheck){
-
         		SmartPtr<StdConvCheck<TVector>> convCheck = CreateConvCheck<TAlgebra>(conv_Check);
         		linSolver->set_convergence_check(convCheck);
     		}
@@ -846,7 +878,7 @@ namespace ug
 
             SolverUtilFunctionProvider() {};
 
-            SmartPtr<ILinearIterator<vector_type>> GetCreatePreconditioner(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil)
+            SmartPtr<IPreconditioner<TAlgebra>> GetCreatePreconditioner(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil)
             {
                 return CreatePreconditioner<TDomain, TAlgebra>(desc, solverutil);
             }
