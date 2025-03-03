@@ -291,14 +291,27 @@ namespace ug
     		else if (type == "uglu"){
         		// TODO: Implement LU_solver(LU())
         		// linSolver = make_sp(new AgglomeratingSolver<TVector>(LU()));
+                typedef LU<TAlgebra> TUGLU;
+                SmartPtr<TUGLU> UGLU = make_sp(new TUGLU());
+                linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(UGLU));
     		}
     		else if (type == "superlu"){
-        		// AgglomeratingSolver(SuperLU())
-                typedef AgglomeratingSolver<TAlgebra> TAgglomeratingSolver;
-                typedef TAlgebra vector_type;
-                SmartPtr<ILinearOperatorInverse<vector_type, vector_type>> linOpInverse = make_sp(new SuperLUSolver<TAlgebra>());
-				SmartPtr<TAgglomeratingSolver> SuperLU = make_sp(new TAgglomeratingSolver(linOpInverse));
-                linSolver = SuperLU.template cast_static<TLinSolv>();
+                // create SuperLU Solver
+                typedef SuperLUSolver<TAlgebra> TSupLUSolv;
+                SmartPtr<TSupLUSolv> superlu = make_sp(new TSupLUSolv());
+
+                // // typedef for convenience
+                typedef typename TAlgebra::vector_type Tvector;
+                typedef ILinearOperatorInverse<Tvector, Tvector> TSolverBase;
+
+                // cast to ILinearOperatorInverse<Tvector, Tvector>
+                SmartPtr<TSolverBase> linOpInverse;
+                linOpInverse = superlu.template cast_static<TSolverBase>();
+
+                // create Agglomerating Solver
+                typedef AgglomeratingSolver<TAlgebra> TAggSolver;
+				SmartPtr<TAggSolver> superLU = make_sp(new TAggSolver(linOpInverse));
+                linSolver = superLU.template cast_static<TLinSolv>();
     		}
     		else{
         		UG_THROW("Invalid linear solver specified: " << type);
