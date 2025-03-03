@@ -108,7 +108,6 @@ namespace ug
             SmartPtr<NewtonSolver<TAlgebra>>,
             SmartPtr<AssembledMultiGridCycle<TDomain, TAlgebra>>,
             SmartPtr<LinearSolver<typename TAlgebra::vector_type>>
-
             >;
 
         template <typename TDomain, typename TAlgebra>
@@ -158,8 +157,7 @@ namespace ug
 
         template <typename TDomain, typename TAlgebra>
         SmartPtr<SolverUtil<TDomain, TAlgebra>> CreateSolver(nlohmann::json &solverDesc,
-                                                             SolverUtil<TDomain, TAlgebra> solverutil)
-        {
+                                                             SolverUtil<TDomain, TAlgebra> solverutil){
 
             // PrepareSolverUtil<TDomain, TAlgebra>();
             std::string type = "linear";
@@ -275,6 +273,16 @@ namespace ug
             		restart = desc["restart"];
         		}
         		linSolver = make_sp(new GMRES<TVector>(restart));
+
+                myprecond = json_default_linearSolver[type]["precond"];
+                if(desc.contains("precond")){
+                    myprecond = desc["precond"];
+                }
+                conv_Check = json_default_linearSolver[type]["convCheck"];
+                if(desc.contains("convCheck")){
+                    conv_Check = desc["convCheck"];
+                }
+
         		createPrecond = true;
         		createConvCheck = true;
     		}
@@ -283,24 +291,57 @@ namespace ug
 				bool ScriptHasClassGroup(const char* classname);
         	    if (ScriptHasClassGroup("SuperLU")){
                 	linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new SuperLUSolver<TAlgebra>())));
-                	}
+                }
         	    else{
-                    linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new LU<TAlgebra>())));
+                    typedef LU<TAlgebra> TLU;
+                	SmartPtr<TLU> LU_solver = make_sp(new TLU());
+
+					if (!desc["lu"]["showProgress"].is_null()){
+                    	bool showProgress = desc["lu"]["showProgress"];
+                        LU_solver->set_show_progress(showProgress);
+                    }
+                    else{
+                    	bool showProgress = json_default_linearSolver["lu"]["showProgress"];
+                        LU_solver->set_show_progress(showProgress);
+                    }
+					bool info = json_default_linearSolver["lu"]["info"];
+                    if (desc.contains("info")){
+                        info = desc["info"];
+                    }
+                    LU_solver->set_info(info);
+
+                    linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver));
                 }
     		}
     		else if (type == "uglu"){
-        		// TODO: Implement LU_solver(LU())
-        		// linSolver = make_sp(new AgglomeratingSolver<TVector>(LU()));
-                typedef LU<TAlgebra> TUGLU;
-                SmartPtr<TUGLU> UGLU = make_sp(new TUGLU());
-                linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(UGLU));
+        		// create LU Solver
+                typedef LU<TAlgebra> TLU;
+                SmartPtr<TLU> LU_solver = make_sp(new TLU());
+
+				if (!desc["lu"]["showProgress"].is_null()){
+                   	bool showProgress = desc["lu"]["showProgress"];
+                    LU_solver->set_show_progress(showProgress);
+                }
+                else{
+                  	bool showProgress = json_default_linearSolver["lu"]["showProgress"];
+                    LU_solver->set_show_progress(showProgress);
+                }
+
+				bool info = json_default_linearSolver["lu"]["info"];
+                if (desc.contains("info")){
+                    info = desc["info"];
+                }
+                LU_solver->set_info(info);
+
+                // create AgglomeratingSolver(LU_Solver))
+                linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver));
     		}
     		else if (type == "superlu"){
                 // create SuperLU Solver
                 typedef SuperLUSolver<TAlgebra> TSupLUSolv;
                 SmartPtr<TSupLUSolv> superlu = make_sp(new TSupLUSolv());
 
-                // // typedef for convenience
+                // typedef for convenience
                 typedef typename TAlgebra::vector_type Tvector;
                 typedef ILinearOperatorInverse<Tvector, Tvector> TSolverBase;
 
@@ -308,7 +349,7 @@ namespace ug
                 SmartPtr<TSolverBase> linOpInverse;
                 linOpInverse = superlu.template cast_static<TSolverBase>();
 
-                // create Agglomerating Solver
+                // create AgglomeratingSolver(SuperLU_Solver))
                 typedef AgglomeratingSolver<TAlgebra> TAggSolver;
 				SmartPtr<TAggSolver> superLU = make_sp(new TAggSolver(linOpInverse));
                 linSolver = superLU.template cast_static<TLinSolv>();
@@ -332,7 +373,12 @@ namespace ug
         		linSolver->set_convergence_check(convCheck);
     		}
 
-        return linSolver;
+			// TODO: SetDebugWriter(linSolver, solverDesc, defaults, solverutil)
+
+        	if (!desc.is_null()){
+            	desc["instance"] = linSolver;
+        	}
+        	return linSolver;
         }
 
         template <typename TDomain, typename TAlgebra>
@@ -575,7 +621,7 @@ namespace ug
                 SmartPtr<TGMG> GMG = make_sp(new TGMG());
                 if (!desc["gmg"]["approxSpace"].is_null())
                 {
-                    SmartPtr<TGMG> GMG = make_sp(new TGMG(approxSpace));
+                    GMG = make_sp(new TGMG(approxSpace));
                 }
                 else
                 {
@@ -770,8 +816,7 @@ namespace ug
                     {
                     }
                 }
-
-                preconditioner = GMG.template cast_static<TPrecond>();*/
+                preconditioner = GMG.template cast_static<TPrecond>(); */
             }
             else if (type == "schur")
             {
