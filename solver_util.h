@@ -612,7 +612,7 @@ namespace ug
                 // TODO:Duy create ssc
             }
             else if (type == "gmg")
-            {/*
+            {
 
                 UG_LOG("Creating Geometric MultiGrid (GMG)\n");
 
@@ -816,7 +816,7 @@ namespace ug
                     {
                     }
                 }
-                preconditioner = GMG.template cast_static<TPrecond>(); */
+                preconditioner = GMG.template cast_static<TPrecond>();
             }
             else if (type == "schur")
             {
