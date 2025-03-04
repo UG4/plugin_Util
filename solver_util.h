@@ -245,10 +245,10 @@ namespace ug
                     conv_Check = desc["convCheck"];
                 }
 
-        		createPrecond = true;
-        		createConvCheck = true;
-    		}
-    		else if (type == "bicgstab"){
+        	    createPrecond = true;
+        	    createConvCheck = true;
+            }
+            else if (type == "bicgstab"){
                 // create BiCGStabSolver
                 typedef BiCGStab<TVector> TBiCGStabSolver;
                 SmartPtr<TBiCGStabSolver> BICGSTAB = make_sp(new TBiCGStabSolver());
@@ -263,16 +263,16 @@ namespace ug
                     conv_Check = desc["convCheck"];
                 }
 
-        		createPrecond = true;
-        		createConvCheck = true;
-    		}
-    		else if (type == "gmres"){
+                createPrecond = true;
+                createConvCheck = true;
+            }
+            else if (type == "gmres"){
                 // create gmres
     		    int restart = json_default_linearSolver[type]["restart"];
-        		if (desc.contains("restart")){
-            		restart = desc["restart"];
-        		}
-        		linSolver = make_sp(new GMRES<TVector>(restart));
+                if (desc.contains("restart")){
+                    restart = desc["restart"];
+                }
+                linSolver = make_sp(new GMRES<TVector>(restart));
 
                 myprecond = json_default_linearSolver[type]["precond"];
                 if(desc.contains("precond")){
@@ -283,28 +283,28 @@ namespace ug
                     conv_Check = desc["convCheck"];
                 }
 
-        		createPrecond = true;
-        		createConvCheck = true;
-    		}
+                createPrecond = true;
+                createConvCheck = true;
+            }
             else if (type == "lu"){
         	    // AgglomeratingSolver and HasClassGroup
-				bool ScriptHasClassGroup(const char* classname);
+                bool ScriptHasClassGroup(const char* classname);
         	    if (ScriptHasClassGroup("SuperLU")){
-                	linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new SuperLUSolver<TAlgebra>())));
+                    linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new SuperLUSolver<TAlgebra>())));
                 }
         	    else{
                     typedef LU<TAlgebra> TLU;
-                	SmartPtr<TLU> LU_solver = make_sp(new TLU());
+                    SmartPtr<TLU> LU_solver = make_sp(new TLU());
 
-					if (!desc["lu"]["showProgress"].is_null()){
-                    	bool showProgress = desc["lu"]["showProgress"];
+                    if (!desc["lu"]["showProgress"].is_null()){
+                        bool showProgress = desc["lu"]["showProgress"];
                         LU_solver->set_show_progress(showProgress);
                     }
                     else{
-                    	bool showProgress = json_default_linearSolver["lu"]["showProgress"];
+                        bool showProgress = json_default_linearSolver["lu"]["showProgress"];
                         LU_solver->set_show_progress(showProgress);
                     }
-					bool info = json_default_linearSolver["lu"]["info"];
+                    bool info = json_default_linearSolver["lu"]["info"];
                     if (desc.contains("info")){
                         info = desc["info"];
                     }
@@ -312,22 +312,22 @@ namespace ug
 
                     linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver));
                 }
-    		}
-    		else if (type == "uglu"){
+            }
+            else if (type == "uglu"){
         		// create LU Solver
                 typedef LU<TAlgebra> TLU;
                 SmartPtr<TLU> LU_solver = make_sp(new TLU());
 
-				if (!desc["lu"]["showProgress"].is_null()){
-                   	bool showProgress = desc["lu"]["showProgress"];
+                if (!desc["lu"]["showProgress"].is_null()){
+                    bool showProgress = desc["lu"]["showProgress"];
                     LU_solver->set_show_progress(showProgress);
                 }
                 else{
-                  	bool showProgress = json_default_linearSolver["lu"]["showProgress"];
+                    bool showProgress = json_default_linearSolver["lu"]["showProgress"];
                     LU_solver->set_show_progress(showProgress);
                 }
 
-				bool info = json_default_linearSolver["lu"]["info"];
+                bool info = json_default_linearSolver["lu"]["info"];
                 if (desc.contains("info")){
                     info = desc["info"];
                 }
@@ -335,8 +335,8 @@ namespace ug
 
                 // create AgglomeratingSolver(LU_Solver))
                 linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver));
-    		}
-    		else if (type == "superlu"){
+            }
+            else if (type == "superlu"){
                 // create SuperLU Solver
                 typedef SuperLUSolver<TAlgebra> TSupLUSolv;
                 SmartPtr<TSupLUSolv> superlu = make_sp(new TSupLUSolv());
@@ -351,34 +351,35 @@ namespace ug
 
                 // create AgglomeratingSolver(SuperLU_Solver))
                 typedef AgglomeratingSolver<TAlgebra> TAggSolver;
-				SmartPtr<TAggSolver> superLU = make_sp(new TAggSolver(linOpInverse));
+                SmartPtr<TAggSolver> superLU = make_sp(new TAggSolver(linOpInverse));
                 linSolver = superLU.template cast_static<TLinSolv>();
-    		}
-    		else{
-        		UG_THROW("Invalid linear solver specified: " << type);
-    		}
+            }
+            else{
+                UG_THROW("Invalid linear solver specified: " << type);
+            }
 
     		// Checks for a valid solver
-    		CondAbort(linSolver.invalid(), "Invalid linear solver specified: " + type);
+            CondAbort(linSolver.invalid(), "Invalid linear solver specified: " + type);
 
             // Preconditioner
-    		if (createPrecond){
-        		SmartPtr<IPreconditioner<TAlgebra>> preconditioner = CreatePreconditioner(myprecond, solverutil);
-        		linSolver->set_preconditioner(preconditioner);
-    		}
+            if (createPrecond){
+                SmartPtr<IPreconditioner<TAlgebra>> preconditioner = CreatePreconditioner(myprecond, solverutil);
+                linSolver->set_preconditioner(preconditioner);
+            }
 
     		// Convergence Check
-    		if (createConvCheck){
-        		SmartPtr<StdConvCheck<TVector>> convCheck = CreateConvCheck<TAlgebra>(conv_Check);
-        		linSolver->set_convergence_check(convCheck);
-    		}
+            if (createConvCheck){
+                SmartPtr<StdConvCheck<TVector>> convCheck = CreateConvCheck<TAlgebra>(conv_Check);
+                linSolver->set_convergence_check(convCheck);
+            }
 
 			// TODO: SetDebugWriter(linSolver, solverDesc, defaults, solverutil)
 
-        	if (!desc.is_null()){
-            	desc["instance"] = linSolver;
-        	}
-        	return linSolver;
+            if (!desc.is_null()){
+                desc["instance"] = linSolver;
+            }
+
+            return linSolver;
         }
 
         template <typename TDomain, typename TAlgebra>
@@ -612,7 +613,7 @@ namespace ug
                 // TODO:Duy create ssc
             }
             else if (type == "gmg")
-            {
+            {/*
 
                 UG_LOG("Creating Geometric MultiGrid (GMG)\n");
 
@@ -816,7 +817,7 @@ namespace ug
                     {
                     }
                 }
-                preconditioner = GMG.template cast_static<TPrecond>();
+                preconditioner = GMG.template cast_static<TPrecond>(); */
             }
             else if (type == "schur")
             {
