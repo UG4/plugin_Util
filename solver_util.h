@@ -98,9 +98,8 @@ namespace ug
             SmartPtr<ElementGaussSeidel<TDomain, TAlgebra>>,
             SmartPtr<ComponentGaussSeidel<TDomain, TAlgebra>>,
             SmartPtr<NewtonSolver<TAlgebra>>,
-            SmartPtr<AssembledMultiGridCycle<TDomain, TAlgebra>>
-            // missing ElementGaussSeidel
-            >;
+            SmartPtr<IAssemble<TAlgebra>>,
+            SmartPtr<AssembledMultiGridCycle<TDomain, TAlgebra>>>;
 
         template <typename TDomain, typename TAlgebra>
         class SolverUtil
@@ -111,6 +110,15 @@ namespace ug
              * map for access. Calls to various subroutines are made
              * */
         public:
+            void setDiscretization(const std::string key, SmartPtr<IAssemble<TAlgebra>> component)
+            {
+                setComponent(key, component);
+            }
+            void setApproximationSpace(const std::string key, SmartPtr<ApproximationSpace<TDomain>> component)
+            {
+                setComponent(key, component);
+            }
+
             void setComponent(const std::string &key, SolverComponent<TDomain, TAlgebra> component)
             {
                 components[key] = component;
@@ -215,6 +223,10 @@ namespace ug
             // TODO: Check if preset
 
             nlohmann::json json_default_preconds = json_predefined_defaults::solvers.at("preconditioner");
+
+            nlohmann::json json_default_transfer = json_predefined_defaults::solvers["transfer"]["std"];
+
+            nlohmann::json json_default_mgStats = json_predefined_defaults::solvers["mgStats"]["standard"];
 
             SmartPtr<TPrecond> preconditioner;
 
@@ -438,17 +450,20 @@ namespace ug
             {
 
                 UG_LOG("Creating Geometric MultiGrid (GMG)\n");
-
+                // idea: dont convert the objects of the lua table into json give them directly to the CreatePreconditioner Function
                 typedef AssembledMultiGridCycle<TDomain, TAlgebra> TGMG;
-                SmartPtr<ApproximationSpace<TDomain>> approxSpace;
                 SmartPtr<TGMG> GMG = make_sp(new TGMG());
-                if (!desc["gmg"]["approxSpace"].is_null())
+                if (solverutil.hasComponent("approxSpace"))
                 {
+                    UG_LOG("ApproximationSpace found!\n");
+                    SmartPtr<ApproximationSpace<TDomain>> approxSpace = std::get<SmartPtr<ApproximationSpace<TDomain>>>(solverutil.getComponent("approxSpace"));
+
                     SmartPtr<TGMG> GMG = make_sp(new TGMG(approxSpace));
                 }
                 else
                 {
-                    // desc["gmg"]["approxSpace"].template cast_dynamic<ApproximationSpace<TDomain>>->print_statistic();
+                    UG_LOG("An ApproximationSpace is required to create a 'gmg' solver.\n");
+                    exit(0);
                 }
                 std::string baseSolverType = json_default_preconds["gmg"]["baseSolver"];
                 if (desc["gmg"].contains("baseSolver"))
@@ -458,6 +473,7 @@ namespace ug
                 nlohmann::json baseSolverDesc;
                 baseSolverDesc["type"] = baseSolverType;
                 SmartPtr<LinearSolver<typename TAlgebra::vector_type>> baseSolver = CreateLinearSolver(baseSolverDesc, solverutil);
+                UG_LOG("Solver found!\n");
                 GMG->set_base_solver(baseSolver);
 
                 std::string smootherType = json_default_preconds["gmg"]["smoother"];
@@ -468,6 +484,7 @@ namespace ug
                 nlohmann::json smootherTypeDesc;
                 smootherTypeDesc["type"] = smootherType;
                 SmartPtr<ILinearIterator<TVector>> smoother = CreatePreconditioner(smootherTypeDesc, solverutil);
+                UG_LOG("Smoother found!\n");
                 GMG->set_smoother(smoother);
 
                 number baseLevel = json_default_preconds["gmg"]["baseLevel"];
@@ -475,6 +492,7 @@ namespace ug
                 {
                     baseLevel = desc["gmg"]["baseLevel"];
                 }
+                UG_LOG("base_level found!\n");
                 GMG->set_base_level(baseLevel);
 
                 std::string cycleType = json_default_preconds["gmg"]["cycle"];
@@ -482,23 +500,22 @@ namespace ug
                 {
                     cycleType = desc["gmg"]["cycle"];
                 }
+                UG_LOG("CycleType found!\n");
                 GMG->set_cycle_type(cycleType);
+
                 // Not so sure if it should contain the actual parameter
-                number discretization = json_default_preconds["gmg"]["discretization"];
-                SmartPtr<ug::IAssemble<TAlgebra>> discretizationDesc;
-                if (desc["gmg"].contains("discretization"))
+                if (solverutil.hasComponent("discretization"))
                 {
-                    number discretization = desc["gmg"]["discretization"];
-                    GMG->set_discretization(discretizationDesc);
-                }
-                else
-                {
+                    SmartPtr<IAssemble<TAlgebra>> discretization = std::get<SmartPtr<IAssemble<TAlgebra>>>(solverutil.getComponent("discretization"));
+                    UG_LOG("Discretization found!\n");
+                    GMG->set_discretization(discretization);
                 }
                 number preSmooth = json_default_preconds["gmg"]["preSmooth"];
                 if (desc["gmg"].contains("preSmooth"))
                 {
                     preSmooth = desc["gmg"]["preSmooth"];
                 }
+                UG_LOG("presmooth found!\n");
                 GMG->set_num_presmooth(preSmooth);
 
                 number postSmooth = json_default_preconds["gmg"]["postSmooth"];
@@ -506,6 +523,7 @@ namespace ug
                 {
                     postSmooth = desc["gmg"]["postSmooth"];
                 }
+                UG_LOG("postsmooth found!\n");
                 GMG->set_num_postsmooth(postSmooth);
 
                 bool rap = json_default_preconds["gmg"]["rap"];
@@ -513,6 +531,7 @@ namespace ug
                 {
                     rap = desc["gmg"]["rap"];
                 }
+                UG_LOG("rap found!\n");
                 GMG->set_rap(rap);
 
                 bool rim = json_default_preconds["gmg"]["rim"];
@@ -520,6 +539,7 @@ namespace ug
                 {
                     rim = desc["gmg"]["rim"];
                 }
+                UG_LOG("smooth_on_surface_rim found!\n");
                 GMG->set_smooth_on_surface_rim(rim);
 
                 bool emulateFullRefined = json_default_preconds["gmg"]["emulateFullRefined"];
@@ -527,118 +547,106 @@ namespace ug
                 {
                     emulateFullRefined = desc["gmg"]["emulateFullRefined"];
                 }
+                UG_LOG("emulate_full_refined_grid found!\n");
                 GMG->set_emulate_full_refined_grid(emulateFullRefined);
 
-                std::string transfer = json_default_preconds["gmg"]["transfer"];
-                if (desc["gmg"].contains("transfer"))
+                UG_LOG("transfer started!\n")
+
+                typedef StdTransfer<TDomain, TAlgebra> TFD;
+                SmartPtr<TFD> TF = make_sp(new TFD());
+                UG_LOG("SmartPtr created\n");
+                std::cout << json_default_transfer.dump() << std::endl;
+                number restrictionDamp = json_default_transfer["restrictionDamp"];
+                UG_LOG("Defaultrestiction!\n");
+                if (desc["gmg"].contains("transfer") && desc["gmg"]["transfer"].contains("restrictionDamp"))
                 {
-                    std::string transfer = desc["gmg"]["transfer"];
+                    restrictionDamp = desc["gmg"]["transfer"]["restrictionDamp"];
+                    UG_LOG("restiction!\n");
                 }
-                if (transfer == "std")
+                UG_LOG("restictionDamp!");
+                TF->set_restriction_damping(restrictionDamp);
+
+                number prolongationDamp = json_default_transfer["prolongationDamp"];
+                if (desc["gmg"].contains("transfer") && desc["gmg"]["transfer"].contains("prolongationDamp"))
                 {
-                    nlohmann::json transferDesc = desc["gmg"]["transfer"]["std"];
-                    nlohmann::json transferDefault = json_default_preconds["transfer"]["std"];
-                    typedef StdTransfer<TDomain, TAlgebra> TFD;
-                    SmartPtr<TFD> TF = make_sp(new TFD());
-
-                    number restrictionDamp = transferDefault["restrictionDamp"];
-                    if (desc["gmg"].contains("restrictionDamp"))
-                    {
-                        number restrictionDamp = transferDesc["restrictionDamp"];
-                    }
-                    TF->set_restriction_damping(restrictionDamp);
-
-                    number prolongationDamp = transferDefault["prolongationDamp"];
-                    if (desc["gmg"].contains("prolongationDamp"))
-                    {
-                        number prolongationDamp = transferDesc["prolongationDamp"];
-                    }
-                    TF->set_prolongation_damping(prolongationDamp);
-
-                    bool optimization = transferDefault["enableP1LagrangeOptimization"];
-                    if (desc["gmg"].contains("enableP1LagrangeOptimization"))
-                    {
-                        bool optimization = transferDesc["enableP1LagrangeOptimization"];
-                    }
-                    TF->enable_p1_lagrange_optimization(optimization);
-
-                    // TF->set_debug(TF, transferDesc, transferDefault, solverutil);
-                    GMG->set_transfer(TF);
+                    prolongationDamp = desc["gmg"]["transfer"]["prolongationDamp"];
                 }
+                UG_LOG("prolongation!");
+                TF->set_prolongation_damping(prolongationDamp);
+
+                bool optimization = json_default_transfer["enableP1LagrangeOptimization"];
+                if (desc["gmg"].contains("transfer") && desc["gmg"]["transfer"].contains("enableP1LagrangeOptimization"))
+                {
+                    optimization = desc["gmg"]["transfer"]["enableP1LagrangeOptimization"];
+                }
+                UG_LOG("lagrange_opt!");
+                TF->enable_p1_lagrange_optimization(optimization);
+
+                // TF->set_debug(TF, transferDesc, transferDefault, solverutil);
+                UG_LOG("transfer found!\n");
+                GMG->set_transfer(TF);
 
                 bool debug = json_default_preconds["gmg"]["debug"];
                 SmartPtr<ug::GridFunctionDebugWriter<TDomain, TAlgebra>> debugDesc;
                 if (desc["gmg"].contains("debug"))
                 {
-                    bool debug = desc["gmg"]["debug"];
+                    debug = desc["gmg"]["debug"];
                 }
                 if (debug == true)
                 {
                     GMG->set_debug(debugDesc);
                 }
-                else
-                {
-                }
 
                 bool gatheredBaseSolverIfAmbiguous = json_default_preconds["gmg"]["gatheredBaseSolverIfAmbiguous"];
+                UG_LOG("gatheredBaseSolverIfAMb found!\n")
                 if (desc["gmg"].contains("gatheredBaseSolverIfAmbiguous"))
                 {
                     gatheredBaseSolverIfAmbiguous = desc["gmg"]["gatheredBaseSolverIfAmbiguous"];
                 }
                 GMG->set_gathered_base_solver_if_ambiguous(gatheredBaseSolverIfAmbiguous);
+                UG_LOG("beginn mgStats!\n")
+                UG_LOG("mgStats found!\n")
+                std::cout << json_default_mgStats.dump() << std::endl;
+                typedef MGStats<TDomain, TAlgebra> MGS;
+                SmartPtr<MGS> MGSD = make_sp(new MGS());
 
-                std::string mgStats = json_default_preconds["gmg"]["mgStats"];
-                if (!desc["gmg"]["mgStats"].is_null())
+                std::string prefix = json_default_mgStats["filenamePrefix"];
+                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("filenamePrefix"))
                 {
-
-                    if (mgStats == "standard")
-                    {
-                        nlohmann::json mgStatsDesc = desc["gmg"]["mgStats"]["standard"];
-                        nlohmann::json mgStatsDefault = json_default_preconds["mgStats"]["standard"];
-                        typedef MGStats<TDomain, TAlgebra> MGS;
-                        SmartPtr<MGS> MGSD = make_sp(new MGS());
-
-                        std::string prefix = mgStatsDefault["filenamePrefix"];
-                        if (mgStatsDesc.contains("filenamePrefix"))
-                        {
-                            std::string prefix = mgStatsDesc["filenamePrefix"];
-                        }
-                        MGSD->set_filename_prefix(prefix.c_str());
-
-                        bool exitError = mgStatsDefault["exitonError"];
-                        if (mgStatsDesc.contains("exitonError"))
-                        {
-                            bool exitError = mgStatsDesc["exitonError"];
-                        }
-                        MGSD->set_exit_on_error(exitError);
-
-                        bool errorVec = mgStatsDefault["writeErrVecs"];
-                        if (mgStatsDesc.contains("writeErrVecs"))
-                        {
-                            bool errorVec = mgStatsDefault["writeErrVecs"];
-                        }
-                        MGSD->set_write_err_vecs(errorVec);
-
-                        bool errorDiff = mgStatsDefault["writeErrDiffs"];
-                        if (mgStatsDesc.contains("writeErrDiffs"))
-                        {
-                            bool errorDiff = mgStatsDesc["writeErrDiffs"];
-                        }
-                        MGSD->set_write_err_diffs(errorDiff);
-
-                        std::vector<int> activeStage = mgStatsDefault["activeStages"];
-                        if (mgStatsDesc.contains("activeStages"))
-                        {
-                            std::vector<int> activeStage = mgStatsDesc["activeStages"];
-                        }
-                        MGSD->set_active_stages(activeStage);
-
-                        GMG->set_mg_stats(MGSD);
-                    }
-                    else
-                    {
-                    }
+                    prefix = desc["gmg"]["mgStats"]["standard"]["filenamePrefix"];
                 }
+                MGSD->set_filename_prefix(prefix.c_str());
+
+                bool exitError = json_default_mgStats["exitOnError"];
+                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("exitOnError"))
+                {
+                    exitError = desc["gmg"]["mgStats"]["standard"]["exitOnError"];
+                }
+                MGSD->set_exit_on_error(exitError);
+
+                bool errorVec = json_default_mgStats["writeErrVecs"];
+                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("writeErrVecs"))
+                {
+                    errorVec = desc["gmg"]["mgStats"]["standard"]["writeErrVecs"];
+                }
+                MGSD->set_write_err_vecs(errorVec);
+
+                bool errorDiff = json_default_mgStats["writeErrDiffs"];
+                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("writeErrDiffs"))
+                {
+                    errorDiff = desc["gmg"]["mgStats"]["standard"]["writeErrDiffs"];
+                }
+                MGSD->set_write_err_diffs(errorDiff);
+                if (!json_default_mgStats["activeStages"].is_null())
+                {
+                    std::vector<int> activeStage = json_default_mgStats["activeStages"].get<std::vector<int>>();
+                    if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("activeStages"))
+                    {
+                        activeStage = desc["gmg"]["mgStats"]["standard"]["activeStages"].get<std::vector<int>>();
+                    }
+                    MGSD->set_active_stages(activeStage);
+                }
+                GMG->set_mg_stats(MGSD);
 
                 preconditioner = GMG.template cast_static<TPrecond>();
             }

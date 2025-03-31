@@ -37,17 +37,14 @@ function util.test.CreateSolver(descriptor, solverutil)
 end
 
 function util.test.CreatePreconditioner(desc, solverutil)
-
+    
     local jsondesc = JSON()
-    if solverutil.hasComponent("approxSpace") then
-        print(solverutil.getComponentAs("approxSpace"))
-    end
     JSON_parse(jsondesc, util.json.encode(desc))
     --print("|"..JSON_dump(jsondesc).."|")
-    local solverut = SolverUtil()
+    -- local solverut = SolverUtil()
     print("create function provider")
     local functionProvider = SolverUtilFunctionProvider()
-    local precond = functionProvider:CreatePreconditioner(jsondesc, solverut)
+    local precond = functionProvider:CreatePreconditioner(jsondesc, solverutil)
     print(precond:config_string())
     return precond
 end

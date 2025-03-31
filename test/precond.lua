@@ -26,16 +26,28 @@ local egsDesc = {
 }
 
 dom = util.CreateDomain("grid.ugx", 1, {})
-
-local gmgDesc = {
+approxSpace = ApproximationSpace(dom)
+local gmgDesc = 
+{
 	type = "gmg",
-	approxSpace = approxSpace,
+	-- approxSpace = approxSpace,
 	smoother = {type = "sgs"},
 	preSmooth = 1,
 	postSmooth = 1, 
 	baseLevel = 0,
 	baseSolver = "lu",
-	rap = false
+	rap = false,
+    cycle = "V",
+    --"discretization" = null,
+    gatheredBaseSolverIfAmbiguous = false,
+    preSmooth = 3,
+    postSmooth = 3,
+    rap = false,
+    rim = false,
+    emulateFullRefined = false,
+    transfer = "std",
+    debug = false,
+    mgStats = null
 }
 
 local cgsDesc = {
@@ -45,22 +57,31 @@ local cgsDesc = {
 	weights = false,
 	relax = 1.0	
 }
+approxSpace:print_statistic()
+print(type(gmgDesc["approxSpace"]))
+print(require("json").encode(gmgDesc))
+for key, value in pairs(gmgDesc) do
+    if value == nil then
+        print("Fehlender Wert für Schlüssel:", key)
+    end
+end
 
 local solverutil = SolverUtil()
+solverutil:setApproximationSpace("approxSpace",approxSpace)
 print("calling CreatePreconditioner (ilu)")
-local precond = util.test.CreatePreconditioner(iluDesc, SolverUtil)
+local precond = util.test.CreatePreconditioner(iluDesc, solverutil)
 print("ilu: "..precond:config_string())
-local precond = util.test.CreatePreconditioner(jacDesc, SolverUtil)
+local precond = util.test.CreatePreconditioner(jacDesc, solverutil)
 print("jac: "..precond:config_string())
-local precond = util.test.CreatePreconditioner(gsDesc, SolverUtil)
+local precond = util.test.CreatePreconditioner(gsDesc, solverutil)
 print("gs: "..precond:config_string())
-local precond = util.test.CreatePreconditioner(sgsDesc, SolverUtil)
+local precond = util.test.CreatePreconditioner(sgsDesc, solverutil)
 print("sgs: "..precond:config_string())
-local precond = util.test.CreatePreconditioner(egsDesc, SolverUtil)
+local precond = util.test.CreatePreconditioner(egsDesc, solverutil)
 print("egs: "..precond:config_string())
-local precond = util.test.CreatePreconditioner(cgsDesc, SolverUtil)
+local precond = util.test.CreatePreconditioner(cgsDesc, solverutil)
 print("cgs: "..precond:config_string())
-local precond = util.test.CreatePreconditioner(gmgDesc,SolverUtil)
+local precond = util.test.CreatePreconditioner(gmgDesc,solverutil)
 print("gmg: "..precond:config_string())
 local lineSearchDesc = {
                        	type			= "standard",

@@ -172,6 +172,8 @@ namespace ug
                     string name = string("SolverUtil").append(suffix);
                     reg.template add_class_<T>(name, grp)
                         .add_constructor()
+                        .add_method("setApproximationSpace", &T::setApproximationSpace)
+                        .add_method("setDiscretization", &T::setDiscretization)
                         .set_construct_as_smart_pointer(true);
                     reg.add_class_to_group(name, "SolverUtil", tag);
                 }
