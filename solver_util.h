@@ -243,12 +243,13 @@ namespace ug
         }
 
         template <typename TDomain, typename TAlgebra>
-        SmartPtr<LinearSolver<typename TAlgebra::vector_type>>
+        SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>>
         CreateLinearSolver(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> solverutil)
         {
 
             typedef typename TAlgebra::vector_type TVector;
             typedef LinearSolver<TVector> TLinSolv;
+            typedef ILinearOperatorInverse<TVector> TReturn;
             SmartPtr<TLinSolv> linSolver;
 
             // load defaults
@@ -298,7 +299,7 @@ namespace ug
                 // create CGSolver
                 typedef CG<TVector> TCGSolver;
                 SmartPtr<TCGSolver> CG = make_sp(new TCGSolver());
-                linSolver = make_sp(new TCGSolver()); //.template cast_dynamic<ILinearOperatorInverse<typename TAlgebra::vector_type>>();
+                linSolver = make_sp(new TCGSolver()).template cast_dynamic<TLinSolv>();
                 ;
 
                 precondtype = json_default_linearSolver["cg"]["precond"];
@@ -320,7 +321,7 @@ namespace ug
                 // create BiCGStabSolver
                 typedef BiCGStab<TVector> TBiCGStabSolver;
                 SmartPtr<TBiCGStabSolver> BICGSTAB = make_sp(new TBiCGStabSolver());
-                linSolver = make_sp(new TBiCGStabSolver); //.template cast_dynamic<ILinearOperatorInverse<typename TAlgebra::vector_type>>();
+                linSolver = make_sp(new TBiCGStabSolver).template cast_dynamic<TLinSolv>();
 
                 precondtype = json_default_linearSolver["bicgstab"]["precond"];
                 if (desc["bicgstab"].contains("precond"))
@@ -344,8 +345,8 @@ namespace ug
                 {
                     restart = desc["gmres"]["restart"];
                 }
-                linSolver = make_sp(new GMRES<TVector>(restart)); //.template cast_dynamic<ILinearOperatorInverse<typename TAlgebra::vector_type>>();
-
+                linSolver = make_sp(new GMRES<TVector>(restart)).template cast_dynamic<TLinSolv>();
+                
                 precondtype = json_default_linearSolver["gmres"]["precond"];
                 if (desc["gmres"].contains("precond"))
                 {
@@ -367,7 +368,7 @@ namespace ug
                 bool ScriptHasClassGroup(const char *classname);
                 if (ScriptHasClassGroup("SuperLU"))
                 {
-                    linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new SuperLUSolver<TAlgebra>()))); //.template cast_dynamic<ILinearOperatorInverse<typename TAlgebra::vector_type>>();
+                    linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new SuperLUSolver<TAlgebra>()))).template cast_dynamic<TLinSolv>();
                 }
                 else
                 {
@@ -392,7 +393,7 @@ namespace ug
                     LU_solver->set_info(info);
                     // SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>> LU_solver = make_sp(new SuperLUSolver<TAlgebra>());
                     // SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>> linSolver = GetCreateLinearSolver(LU_solver);
-                    linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver)); //.template cast_dynamic<ILinearOperatorInverse<typename TAlgebra::vector_type>>();
+                    linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver)).template cast_dynamic<TLinSolv>();
                 }
             }
             else if (type == "uglu")
@@ -420,7 +421,7 @@ namespace ug
                 LU_solver->set_info(info);
 
                 // create AgglomeratingSolver(LU_Solver))
-                linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver)); //.template cast_dynamic<ILinearOperatorInverse<typename TAlgebra::vector_type>>();
+                linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver)).template cast_dynamic<TLinSolv>();
             }
             else if (type == "superlu")
             {
@@ -469,7 +470,7 @@ namespace ug
 
             // TODO: SetDebugWriter(linSolver, solverDesc, defaults, solverutil)
 
-            return linSolver;
+            return linSolver.template cast_dynamic<TReturn>();
         }
 
         template <typename TDomain, typename TAlgebra>
@@ -806,16 +807,16 @@ namespace ug
                     UG_LOG("An ApproximationSpace is required to create a 'gmg' solver.\n");
                     exit(0);
                 }
-                /* std::string baseSolverType = json_default_preconds["gmg"]["baseSolver"];
+                std::string baseSolverType = json_default_preconds["gmg"]["baseSolver"];
                 if (desc["gmg"].contains("baseSolver"))
                 {
                     baseSolverType = desc["gmg"]["baseSolver"];
                 }
                 nlohmann::json baseSolverDesc;
                 baseSolverDesc["type"] = baseSolverType;
-                SmartPtr<LinearSolver<typename TAlgebra::vector_type>> baseSolver = CreateLinearSolver(baseSolverDesc, solverutil);
+                // SmartPtr<LinearSolver<typename TAlgebra::vector_type>> baseSolver = CreateLinearSolver(baseSolverDesc, solverutil);
                 UG_LOG("Solver found!\n");
-                GMG->set_base_solver(baseSolver); */
+                GMG->set_base_solver(CreateLinearSolver(baseSolverDesc, solverutil));
 
                 std::string smootherType = json_default_preconds["gmg"]["smoother"];
                 if (desc["gmg"].contains("smoother"))
