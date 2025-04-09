@@ -32,8 +32,14 @@ function util.test.CreateConvCheck(convCheckDesc, solverutil)
 end
 
 function util.test.CreateSolver(descriptor, solverutil)
+    local jsondesc = JSON()
+    JSON_parse(jsondesc, util.json.encode(descriptor))
 
-
+    local solverut = SolverUtil()
+    local functionProvider = SolverUtilFunctionProvider()
+    local solver = functionProvider:CreateSolver(jsondesc, solverut)
+    print(solver:config_string())
+    return solver
 end
 
 function util.test.CreatePreconditioner(desc, solverutil)
