@@ -149,6 +149,9 @@ namespace ug
                         .add_constructor()
                         .add_method("CreateLineSearch", &T::GetCreateLineSearch)
                         .add_method("CreatePreconditioner", &T::GetCreatePreconditioner)
+                        .add_method("CreateLinearSolver", &T::GetCreateLinearSolver)
+                        .add_method("CreateNewtonSolver", &T::GetCreateNewtonSolver)
+                        .add_method("CreateConvCheck", &T::GetCreateConvCheck)
                         .set_construct_as_smart_pointer(true);
                     reg.add_class_to_group(name, "SolverUtilFunctionProvider", tag);
                 }
@@ -172,6 +175,9 @@ namespace ug
                     string name = string("SolverUtil").append(suffix);
                     reg.template add_class_<T>(name, grp)
                         .add_constructor()
+                        //.add_method("hasComponent", &T::hasComponent)
+                        //.add_method("setComponent", &T::setComponent)
+                        //.add_method("getComponent", &T::getComponent)
                         .add_method("setApproximationSpace", &T::setApproximationSpace)
                         .add_method("setDiscretization", &T::setDiscretization)
                         .set_construct_as_smart_pointer(true);

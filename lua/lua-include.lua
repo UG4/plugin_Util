@@ -27,17 +27,33 @@ function util.test.CreateConvCheck(convCheckDesc, solverutil)
 
 
     local convCheck = CreateConvCheckCPU1(descriptor)
+    print("test_z30")
     print(convCheck:config_string())
     return convCheck
 end
 
-function util.test.CreateSolver(descriptor, solverutil)
+function util.test.CreateLinearSolver(descriptor, solverutil)
     local jsondesc = JSON()
+    local json_util = JSON()
     JSON_parse(jsondesc, util.json.encode(descriptor))
-
+    --JSON_parse(json_util, util.json.encode(solverutil))
     local solverut = SolverUtil()
+    print("function provider_CreateLinearSolver")
     local functionProvider = SolverUtilFunctionProvider()
-    local solver = functionProvider:CreateSolver(jsondesc, solverut)
+    local solver = functionProvider:CreateLinearSolver(jsondesc, solverut)
+    print(solver:config_string())
+    return solver
+end
+
+function util.test.CreateNewtonSolver(descriptor, solverutil)
+    local jsondesc = JSON()
+    local json_util = JSON()
+    JSON_parse(jsondesc, util.json.encode(descriptor))
+    --JSON_parse(json_util, util.json.encode(solverutil))
+    local solverut = SolverUtil()
+    print("function provider_CreateNewtonSolver")
+    local functionProvider = SolverUtilFunctionProvider()
+    local solver = functionProvider:CreateNewtonSolver(jsondesc, solverut)
     print(solver:config_string())
     return solver
 end

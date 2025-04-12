@@ -268,6 +268,7 @@ namespace ug
 
             // if no descriptor given, create default linear solver
             if (!desc.contains("LinearSolver")){
+                UG_LOG("default LinearSolver\n")
                 SmartPtr<ILU<TAlgebra>> ilu = make_sp<ILU<TAlgebra>>(new ILU<TAlgebra>());
                 SmartPtr<StdConvCheck<TVector>> convCheck = make_sp<StdConvCheck<TVector>>(
                     new StdConvCheck<TVector>(100, 1e-9, 1e-12));
@@ -280,6 +281,7 @@ namespace ug
             std::string type = desc["type"];
 
             if (type == "linear"){
+                UG_LOG("type solver is linear\n")
                 // create linear
                 linSolver = make_sp(new TLinSolv());
                 createPrecond = true;
@@ -296,6 +298,7 @@ namespace ug
                 }
             }
             else if (type == "cg"){
+                UG_LOG("type solver is cg\n")
                 // create CGSolver
                 typedef CG<TVector> TCGSolver;
                 SmartPtr<TCGSolver> CG = make_sp(new TCGSolver());
@@ -315,6 +318,7 @@ namespace ug
                 createConvCheck = true;
             }
             else if (type == "bicgstab"){
+                UG_LOG("type solver is bicgstab\n")
                 // create BiCGStabSolver
                 typedef BiCGStab<TVector> TBiCGStabSolver;
                 SmartPtr<TBiCGStabSolver> BICGSTAB = make_sp(new TBiCGStabSolver());
@@ -333,6 +337,7 @@ namespace ug
                 createConvCheck = true;
             }
             else if (type == "gmres"){
+                UG_LOG("type solver is gmres\n")
                 // create gmres
                 int restart = json_default_linearSolver["gmres"]["restart"];
                 if (desc["gmres"].contains("restart")){
@@ -451,9 +456,9 @@ namespace ug
         }
 
         template <typename TDomain, typename TAlgebra>
-        SmartPtr<SolverUtil<TDomain, TAlgebra>>
-        CreateSolver(nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra> solverutil){
-
+        SmartPtr<NewtonSolver<TAlgebra>>
+        CreateNewtonSolver(nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra>& solverutil){
+            UG_LOG("Creating NewtonSolver\n")
             nlohmann::json json_default_nonlinearSolver = json_predefined_defaults::solvers["nonlinearSolver"];
 
             // PrepareSolverUtil<TDomain, TAlgebra>();
@@ -462,6 +467,7 @@ namespace ug
                 type = solverDesc["type"];
             }
             if (type == "newton"){
+                UG_LOG("type solver is newton\n")
                 auto newtonSolver = make_sp(new NewtonSolver<TAlgebra>());
 
                 // linear solver
@@ -472,7 +478,9 @@ namespace ug
                 }
                 nlohmann::json linsolverDesc;
                 linsolverDesc["type"] = linSolverType;
-                SmartPtr<LinearSolver<typename TAlgebra::vector_type>> linSolver;
+                //SmartPtr<LinearSolver<typename TAlgebra::vector_type>> linSolver;
+                SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>> linSolver;
+                //SmartPtr<ILinearOperatorInverse<vector_type> > inv = ...;
                 linSolver = CreateLinearSolver(linsolverDesc, solverutil);
                 newtonSolver->set_linear_solver(linSolver);
 
@@ -517,7 +525,8 @@ namespace ug
                 return newtonSolver;
             }
             else{
-                return CreateLinearSolver<TDomain, TAlgebra>(solverDesc, solverutil);
+                UG_THROW("CreateNewtonSolver: Only 'newton' solver type is supported in this function.")
+                // return CreateLinearSolver<TDomain, TAlgebra>(solverDesc, solverutil);
             }
         }
 
@@ -1030,23 +1039,28 @@ namespace ug
 
             SolverUtilFunctionProvider() {};
 
-            SmartPtr<ILinearIterator<typename TAlgebra::vector_type>> GetCreatePreconditioner(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil)
-            {
+            SmartPtr<ILinearIterator<typename TAlgebra::vector_type>>
+            GetCreatePreconditioner(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
                 return CreatePreconditioner<TDomain, TAlgebra>(desc, solverutil);
             }
 
-            SmartPtr<StandardLineSearch<vector_type>> GetCreateLineSearch(nlohmann::json &desc)
-            {
+            SmartPtr<ILinearIterator<typename TAlgebra::vector_type>>
+            GetCreateLinearSolver(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
+                return CreateLinearSolver<TDomain, TAlgebra>(desc, solverutil);
+            }
+
+            SmartPtr<NewtonSolver<TAlgebra>>
+            GetCreateNewtonSolver(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
+                return CreateNewtonSolver<TDomain, TAlgebra>(desc, solverutil);
+            }
+
+            SmartPtr<StandardLineSearch<vector_type>>
+            GetCreateLineSearch(nlohmann::json &desc){
                 return CreateLineSearch<TAlgebra>(desc);
             }
 
-            SmartPtr<SolverUtil<TDomain, TAlgebra>> GetCreateSolver(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil)
-            {
-                return CreateSolver<TDomain, TAlgebra>(desc, solverutil);
-            }
-
-            SmartPtr<StdConvCheck<vector_type>> GetCreateConvCheck(nlohmann::json &desc)
-            {
+            SmartPtr<StdConvCheck<vector_type>>
+            GetCreateConvCheck(nlohmann::json &desc){
                 return CreateConvCheck<TAlgebra>(desc);
             }
         };
