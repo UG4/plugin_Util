@@ -267,7 +267,7 @@ namespace ug
             bool createConvCheck = false;
 
             // if no descriptor given, create default linear solver
-            if (!desc.contains("LinearSolver")){
+            if (!desc.contains("linearSolver")){
                 UG_LOG("default LinearSolver\n")
                 SmartPtr<ILU<TAlgebra>> ilu = make_sp<ILU<TAlgebra>>(new ILU<TAlgebra>());
                 SmartPtr<StdConvCheck<TVector>> convCheck = make_sp<StdConvCheck<TVector>>(

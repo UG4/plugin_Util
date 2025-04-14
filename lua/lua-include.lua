@@ -27,7 +27,7 @@ function util.test.CreateConvCheck(convCheckDesc, solverutil)
 
 
     local convCheck = CreateConvCheckCPU1(descriptor)
-    print("test_z30")
+    
     print(convCheck:config_string())
     return convCheck
 end

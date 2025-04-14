@@ -31,11 +31,8 @@
 
 -- Load utility scripts (e.g. from from ugcore/scripts)
 print("load script")
---ug_load_script("ug_util.lua")
 ug_load_script("../lua/lua-include.lua")
---InitUG(2, AlgebraType("CPU", 1))
---ug_load_script("ug_util.lua")
---ug_load_script("util/refinement_util.lua")
+
 
 -- Parse parameters and print help
 dim = util.GetParamNumber("-dim", 3, "Dimension of the problem", {2,3})
@@ -87,21 +84,48 @@ domainDisc:add(elemDisc)
 domainDisc:add(dirichletBND)
 
 
--- set up solver (using 'util/solver_util.lua')
 solverDesc = {
-    type = "bicgstab",
-    bicgstab = {
-        precond = "gmg",
-        convCheck = "standard"
-    },
-    gmg = {
-        baseSolver = "lu",
-        smoother = "jac"
-    },
-    lu = {
-        showProgress = true,
-        info = true
-    }
+	type = "newton",
+	
+	lineSearch = {
+		type			= "standard",-- ["standard", "none"]
+		maxSteps		= 8,		-- maximum number of line search steps
+		lambdaStart		= 1,		-- start value for scaling parameter
+		lambdaReduce	= 0.5,		-- reduction factor for scaling parameter
+		acceptBest 		= true,		-- check for best solution if true
+		checkAll		= false		-- check all maxSteps steps if true 
+	},
+	
+	convCheck = {
+		type			= "standard",
+		iterations 		= 30,		-- maximum number of iterations
+		absolute		= 5e-6,		-- absolut value of defect to be reached; usually 1e-7 - 1e-9
+		reduction		= 1e-10,	-- reduction factor of defect to be reached; usually 1e-6 - 1e-8
+		verbose			= true		-- print convergence rates if true
+	},
+
+	linSolver = 
+	{
+		type = "bicgstab",
+		precond = {
+	        type		= "gmg",	-- preconditioner ["gmg", "ilu", "ilut", "jac", "gs", "sgs"]
+	        smoother	= "ilu",	-- pre- and postsmoother, only for gmg ["ilu", "ilut", "jac", "gs", "sgs"]
+	        cycle		= "V",		-- gmg-cycle ["V", "F", "W"]
+	        preSmooth	= 2,		-- number presmoothing steps
+	        postSmooth	= 2,		-- number postsmoothing steps
+	        rap			= false,	-- comutes RAP-product instead of assembling if true
+	        baseLevel	= numPreRefs,-- gmg - coarsest level
+	        baseSolver	= "lu",
+		},
+
+		convCheck = {
+	        type		= "standard",
+	        iterations	= 100,		-- number of iterations
+	        absolute	= 1e-8,		-- absolut value of defact to be reached; usually 1e-8 - 1e-10 (may not be larger than in newton section)
+	        reduction	= 1e-5,		-- reduction factor of defect to be reached
+	        verbose		= true,		-- print convergence rates if true
+		}
+	}
 }
 for key, value in pairs(solverDesc) do
     print("Key:", key, "Type:", type(value))
@@ -119,15 +143,15 @@ end
 
 
 print("\ntest_solving...")
-A = AssembledLinearOperator(domainDisc)
+A = AssembledOperator(domainDisc)
 u = GridFunction(approxSpace)
-b = GridFunction(approxSpace)
+
 u:set(0.0)
 domainDisc:adjust_solution(u)
-domainDisc:assemble_linear(A, b)
 
-solver:init(A, u)
-solver:apply(u, b)
+print("Solver object:", solver)
+solver:init(A)
+solver:apply(u)
 
 
 solFileName = "test_sol_laplace_" .. dim .. "d"
