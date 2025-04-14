@@ -85,6 +85,8 @@ domainDisc:add(dirichletBND)
 
 
 solverDesc = {
+    --nonlinearSolver =
+    --    {
 	type = "newton",
 	
 	lineSearch = {
@@ -107,28 +109,27 @@ solverDesc = {
 	linSolver = 
 	{
 		type = "bicgstab",
-		precond = {
-	        type		= "gmg",	-- preconditioner ["gmg", "ilu", "ilut", "jac", "gs", "sgs"]
-	        smoother	= "ilu",	-- pre- and postsmoother, only for gmg ["ilu", "ilut", "jac", "gs", "sgs"]
-	        cycle		= "V",		-- gmg-cycle ["V", "F", "W"]
-	        preSmooth	= 2,		-- number presmoothing steps
-	        postSmooth	= 2,		-- number postsmoothing steps
-	        rap			= false,	-- comutes RAP-product instead of assembling if true
-	        baseLevel	= numPreRefs,-- gmg - coarsest level
-	        baseSolver	= "lu",
-		},
-
-		convCheck = {
-	        type		= "standard",
-	        iterations	= 100,		-- number of iterations
-	        absolute	= 1e-8,		-- absolut value of defact to be reached; usually 1e-8 - 1e-10 (may not be larger than in newton section)
-	        reduction	= 1e-5,		-- reduction factor of defect to be reached
-	        verbose		= true,		-- print convergence rates if true
+		precond = "ilu",
+                convCheck = {
+                    type = "standard",
+                    maxIterations = 50,
+                    minDefect = 1e-12,
+                    reduction = 1e-6
 		}
 	}
+    --}
 }
+
 for key, value in pairs(solverDesc) do
     print("Key:", key, "Type:", type(value))
+    if type(value) == "table" then
+        print("  Value is a table:")
+        for k, v in pairs(value) do
+            print("    ", k, "=", v)
+        end
+    else
+        print("  Value:", tostring(value))
+    end
 end
 
 local solverutil = SolverUtil()

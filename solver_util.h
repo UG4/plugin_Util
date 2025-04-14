@@ -267,7 +267,7 @@ namespace ug
             bool createConvCheck = false;
 
             // if no descriptor given, create default linear solver
-            if (!desc.contains("linearSolver")){
+            if (!desc.contains("linearSolver") && !desc.contains("nonlinearSolver")){
                 UG_LOG("default LinearSolver\n")
                 SmartPtr<ILU<TAlgebra>> ilu = make_sp<ILU<TAlgebra>>(new ILU<TAlgebra>());
                 SmartPtr<StdConvCheck<TVector>> convCheck = make_sp<StdConvCheck<TVector>>(
@@ -276,6 +276,9 @@ namespace ug
                 default_linear_solver->set_convergence_check(convCheck);
                 default_linear_solver->set_preconditioner(ilu);
                 return default_linear_solver;
+            }
+            else{
+                // TODO: set ["nonlinearSolver"]["newton"]["linSolver"] = ["linearSolver"]["linear"]
             }
 
             std::string type = desc["type"];
@@ -478,9 +481,7 @@ namespace ug
                 }
                 nlohmann::json linsolverDesc;
                 linsolverDesc["type"] = linSolverType;
-                //SmartPtr<LinearSolver<typename TAlgebra::vector_type>> linSolver;
                 SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>> linSolver;
-                //SmartPtr<ILinearOperatorInverse<vector_type> > inv = ...;
                 linSolver = CreateLinearSolver(linsolverDesc, solverutil);
                 newtonSolver->set_linear_solver(linSolver);
 
@@ -527,6 +528,79 @@ namespace ug
             else{
                 UG_THROW("CreateNewtonSolver: Only 'newton' solver type is supported in this function.")
                 // return CreateLinearSolver<TDomain, TAlgebra>(solverDesc, solverutil);
+            }
+        }
+
+        template <typename TDomain, typename TAlgebra>
+        SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>>
+        CreateSolver(nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra>& solverutil){
+
+            //solverutil = PrepareSolverUtil<TDomain, TAlgebra>(solverDesc, solverutil);
+
+            nlohmann::json json_default_nonlinearSolver = json_predefined_defaults::solvers["nonlinearSolver"];
+
+            // PrepareSolverUtil<TDomain, TAlgebra>();
+            std::string type = "linear";
+            if (solverDesc.contains("type")){
+                type = solverDesc["type"];
+            }
+            if (type == "newton"){
+                auto newtonSolver = make_sp(new NewtonSolver<TAlgebra>());
+
+                // linear solver
+                std::string linSolverType = json_default_nonlinearSolver["newton"]["linSolver"];
+                // get descriptor for linear solver
+                if (solverDesc["newton"].contains("linSolver")){
+                    linSolverType = solverDesc["newton"]["linSolver"];
+                }
+                nlohmann::json linsolverDesc;
+                linsolverDesc["type"] = linSolverType;
+                SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>> linSolver;
+                linSolver = CreateLinearSolver(linsolverDesc, solverutil);
+                newtonSolver->set_linear_solver(linSolver);
+
+                // convergence check
+                std::string convCheckType = json_default_nonlinearSolver["newton"]["convCheck"];
+                // get descriptor for convergence check
+                if (solverDesc["newton"].contains("convCheck")){
+                    convCheckType = solverDesc["newton"]["convCheck"];
+                }
+                nlohmann::json convCheckDesc;
+                convCheckDesc["type"] = convCheckType;
+                SmartPtr<StdConvCheck<typename TAlgebra::vector_type>> convCheck;
+                convCheck = CreateConvCheck<TAlgebra>(convCheckDesc);
+                newtonSolver->set_convergence_check(convCheck);
+
+                // line search
+                std::string lineSearchType = "standard";
+                if(json_default_nonlinearSolver["newton"]["lineSearch"].is_string()){
+                    lineSearchType = json_default_nonlinearSolver["newton"]["lineSearch"];
+                }
+                // get descriptor for line search
+                if (solverDesc.contains("newton") &&
+                    solverDesc["newton"].contains("lineSearch") &&
+                    solverDesc["newton"]["lineSearch"].is_string()){
+                    lineSearchType = solverDesc["newton"]["lineSearch"];
+                }
+                nlohmann::json lineSearchDesc;
+                lineSearchDesc["type"] = lineSearchType;
+                // if line_Search not null
+                if (!lineSearchType.empty() && lineSearchType != "none"){
+                    SmartPtr<StandardLineSearch<typename TAlgebra::vector_type>> lineSearch;
+                    lineSearch = CreateLineSearch<TAlgebra>(lineSearchDesc);
+                    newtonSolver->set_line_search(lineSearch);
+                }
+                // set reassemble_J_freq if exists
+                if (solverDesc.contains("reassemble_J_freq") && solverDesc["reassemble_J_freq"].is_number()){
+                    newtonSolver->set_reassemble_J_freq(solverDesc["reassemble_J_freq"]);
+                }
+
+                // TODO: SetDebugWriter(newtonSolver, solverDesc, defaults, solverutil);
+
+                //return newtonSolver;
+            }
+            else{
+                return CreateLinearSolver<TDomain, TAlgebra>(solverDesc, solverutil);
             }
         }
 
@@ -1062,6 +1136,11 @@ namespace ug
             SmartPtr<StdConvCheck<vector_type>>
             GetCreateConvCheck(nlohmann::json &desc){
                 return CreateConvCheck<TAlgebra>(desc);
+            }
+
+            SmartPtr<ILinearIterator<typename TAlgebra::vector_type>>
+            GetCreateSolver(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
+                return CreateSolver<TDomain, TAlgebra>(desc, solverutil);
             }
         };
     } // namespace util
