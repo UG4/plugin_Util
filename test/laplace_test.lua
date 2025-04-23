@@ -85,8 +85,6 @@ domainDisc:add(dirichletBND)
 
 
 solverDesc = {
-    --nonlinearSolver =
-    --    {
 	type = "newton",
 	
 	lineSearch = {
@@ -104,12 +102,7 @@ solverDesc = {
 		absolute		= 5e-6,		-- absolut value of defect to be reached; usually 1e-7 - 1e-9
 		reduction		= 1e-10,	-- reduction factor of defect to be reached; usually 1e-6 - 1e-8
 		verbose			= true		-- print convergence rates if true
-	},
-
-	linSolver = {
-		}
-	
-    --}
+	} 
 }
 
 for key, value in pairs(solverDesc) do
