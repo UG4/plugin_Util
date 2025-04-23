@@ -473,9 +473,6 @@ namespace ug
                 // linear solver default
                 std::string linSolverType = json_default_nonlinearSolver["newton"]["linSolver"];
 
-                //if (solverDesc.contains("linSolver")){
-                //    linSolverType = solverDesc["linSolver"];
-                //}
                 nlohmann::json linSolverDesc;
 
                 // get descriptor for linear solver
@@ -486,10 +483,9 @@ namespace ug
                     UG_LOG(linSolverType << "\n");
                 }
                 else if (solverDesc.contains("linSolver") && solverDesc["linSolver"].is_object()){
-                    UG_LOG("linSolver is a object \n");
+                    UG_LOG("linSolver is an object \n");
                     linSolverDesc = solverDesc["linSolver"];
                     UG_LOG(linSolverDesc.dump(4) << "\n");
-                    //linSolverDesc["type"] = linSolverType;
                 }
                 else {
                     UG_LOG(">> linSolver does not exist, use default \n")
