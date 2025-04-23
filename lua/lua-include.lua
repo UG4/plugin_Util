@@ -59,15 +59,12 @@ function util.test.CreateNewtonSolver(descriptor, solverutil)
 end
 
 function util.test.CreateSolver(descriptor, solverutil)
-    local jsondesc = JSON()
-    local json_util = JSON()
-    JSON_parse(jsondesc, util.json.encode(descriptor))
-    --JSON_parse(json_util, util.json.encode(solverutil))
-    local solverut = SolverUtil()
-    print("function provider_CreateSolver")
-    local functionProvider = SolverUtilFunctionProvider()
-    local solver = functionProvider:CreateSolver(jsondesc, solverut)
-    print(solver:config_string())
+
+    if solverDesc.type == "newton" then
+        solver = util.test.CreateNewtonSolver(solverDesc, solverutil)
+    else
+        solver = util.test.CreateLinearSolver(solverDesc, solverutil)
+    end
     return solver
 end
 

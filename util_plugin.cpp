@@ -151,7 +151,6 @@ namespace ug
                         .add_method("CreatePreconditioner", &T::GetCreatePreconditioner)
                         .add_method("CreateLinearSolver", &T::GetCreateLinearSolver)
                         .add_method("CreateNewtonSolver", &T::GetCreateNewtonSolver)
-                        .add_method("CreateSolver", &T::GetCreateSolver)
                         .add_method("CreateConvCheck", &T::GetCreateConvCheck)
                         .set_construct_as_smart_pointer(true);
                     reg.add_class_to_group(name, "SolverUtilFunctionProvider", tag);

@@ -106,17 +106,7 @@ solverDesc = {
 		verbose			= true		-- print convergence rates if true
 	},
 
-	linSolver = 
-	{
-		type = "bicgstab",
-		precond = "ilu",
-                convCheck = {
-                    type = "standard",
-                    maxIterations = 50,
-                    minDefect = 1e-12,
-                    reduction = 1e-6
-		}
-	}
+	linSolver = "bicgstab"
     --}
 }
 
@@ -134,14 +124,7 @@ end
 
 local solverutil = SolverUtil()
 
-if solverDesc.type == "newton" then
-    solver = util.test.CreateNewtonSolver(solverDesc, solverutil)
-else
-    solver = util.test.CreateLinearSolver(solverDesc, solverutil)
-end
-
---solver = util.test.CreateSolver(solverDesc, solverutil)
-
+solver = util.test.CreateSolver(solverDesc, solverutil)
 
 print("\ntest_solving...")
 A = AssembledOperator(domainDisc)
