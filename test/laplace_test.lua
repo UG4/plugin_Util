@@ -102,45 +102,24 @@ solverDesc = {
 		absolute		= 5e-6,		-- absolut value of defect to be reached; usually 1e-7 - 1e-9
 		reduction		= 1e-10,	-- reduction factor of defect to be reached; usually 1e-6 - 1e-8
 		verbose			= true		-- print convergence rates if true
-	},
-
-	linSolver = 
-	{
-		type = "bicgstab",
-		precond = {
-	        type		= "gmg",	-- preconditioner ["gmg", "ilu", "ilut", "jac", "gs", "sgs"]
-	        smoother	= "ilu",	-- pre- and postsmoother, only for gmg ["ilu", "ilut", "jac", "gs", "sgs"]
-	        cycle		= "V",		-- gmg-cycle ["V", "F", "W"]
-	        preSmooth	= 2,		-- number presmoothing steps
-	        postSmooth	= 2,		-- number postsmoothing steps
-	        rap			= false,	-- comutes RAP-product instead of assembling if true
-	        baseLevel	= numPreRefs,-- gmg - coarsest level
-	        baseSolver	= "lu",
-		},
-
-		convCheck = {
-	        type		= "standard",
-	        iterations	= 100,		-- number of iterations
-	        absolute	= 1e-8,		-- absolut value of defact to be reached; usually 1e-8 - 1e-10 (may not be larger than in newton section)
-	        reduction	= 1e-5,		-- reduction factor of defect to be reached
-	        verbose		= true,		-- print convergence rates if true
-		}
-	}
+	} 
 }
+
 for key, value in pairs(solverDesc) do
     print("Key:", key, "Type:", type(value))
+    if type(value) == "table" then
+        print("  Value is a table:")
+        for k, v in pairs(value) do
+            print("    ", k, "=", v)
+        end
+    else
+        print("  Value:", tostring(value))
+    end
 end
 
 local solverutil = SolverUtil()
 
-if solverDesc.type == "newton" then
-    solver = util.test.CreateNewtonSolver(solverDesc, solverutil)
-else
-    solver = util.test.CreateLinearSolver(solverDesc, solverutil)
-end
-
---solver = util.test.CreateSolver(solverDesc, solverutil)
-
+solver = util.test.CreateSolver(solverDesc, solverutil)
 
 print("\ntest_solving...")
 A = AssembledOperator(domainDisc)

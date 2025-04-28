@@ -58,6 +58,16 @@ function util.test.CreateNewtonSolver(descriptor, solverutil)
     return solver
 end
 
+function util.test.CreateSolver(descriptor, solverutil)
+
+    if solverDesc.type == "newton" then
+        solver = util.test.CreateNewtonSolver(solverDesc, solverutil)
+    else
+        solver = util.test.CreateLinearSolver(solverDesc, solverutil)
+    end
+    return solver
+end
+
 function util.test.CreatePreconditioner(desc, solverutil)
     
     local jsondesc = JSON()
