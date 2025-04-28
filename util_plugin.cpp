@@ -180,6 +180,7 @@ namespace ug
                         //.add_method("getComponent", &T::getComponent)
                         .add_method("setApproximationSpace", &T::setApproximationSpace)
                         .add_method("setDiscretization", &T::setDiscretization)
+                        .add_method("setDebug" ,&T::setDebug)
                         .set_construct_as_smart_pointer(true);
                     reg.add_class_to_group(name, "SolverUtil", tag);
                 }
