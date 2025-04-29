@@ -303,7 +303,7 @@ namespace ug
                 // create CGSolver
                 typedef CG<TVector> TCGSolver;
                 SmartPtr<TCGSolver> CG = make_sp(new TCGSolver());
-                linSolver = make_sp(new TCGSolver()).template cast_dynamic<TLinSolv>();
+                linSolver = CG.template cast_dynamic<TLinSolv>();
 
                 // configure cg
                 precondtype = json_default_linearSolver["cg"]["precond"];
@@ -317,7 +317,7 @@ namespace ug
                 // create BiCGStabSolver
                 typedef BiCGStab<TVector> TBiCGStabSolver;
                 SmartPtr<TBiCGStabSolver> BICGSTAB = make_sp(new TBiCGStabSolver());
-                linSolver = make_sp(new TBiCGStabSolver).template cast_dynamic<TLinSolv>();
+                linSolver = BICGSTAB.template cast_dynamic<TLinSolv>();
 
                 // configure bicgstab
                 precondtype = json_default_linearSolver["bicgstab"]["precond"];
@@ -1005,6 +1005,7 @@ namespace ug
         {
             SmartPtr<ug::GridFunctionDebugWriter<TDomain, TAlgebra>> debugger;
             debugger = std::get<SmartPtr<ug::GridFunctionDebugWriter<TDomain, TAlgebra>>>(solverutil.getComponent("debugger"));
+            debugger->set_vtk_output(true);
             return debugger;
         }
         /*
