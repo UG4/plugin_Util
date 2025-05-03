@@ -46,6 +46,7 @@ set (CMAKE_CXX_STANDARD 17)
 cmake_minimum_required(VERSION 2.6)
 
 project(UG_PLUGIN_${pluginName})
+add_definitions(-DUG_USE_SUPERLU)
 
 # include the definitions and dependencies for ug-plugins.
 include(${UG_ROOT_CMAKE_PATH}/ug_plugin_includes.cmake)
@@ -61,6 +62,7 @@ else(buildEmbeddedPlugins)
 	# create a shared library from the sources and link it against ug4.
 	add_library(${pluginName} SHARED ${SOURCES})
 	target_link_libraries (${pluginName} ug4)
+	target_link_libraries(${pluginName} SuperLU6)
 endif(buildEmbeddedPlugins)
 endif(NOT USE_PYBIND11)
 
