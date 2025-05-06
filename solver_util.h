@@ -273,7 +273,7 @@ namespace ug
             bool createConvCheck = false;
 
             // if no descriptor given, create default linear solver
-            //if (!solverDesc.contains("linearSolver")){
+            // if (!solverDesc.contains("linearSolver")){
             //    UG_LOG("default LinearSolver\n")
             //    SmartPtr<ILU<TAlgebra>> ilu = make_sp<ILU<TAlgebra>>(new ILU<TAlgebra>());
             //    SmartPtr<StdConvCheck<TVector>> convCheck = make_sp<StdConvCheck<TVector>>(
@@ -953,6 +953,7 @@ namespace ug
                 GMG->set_transfer(TF);
 
                 // entweder mit boolean Objekt bauen oder direkt Objekt abfragen
+
                 SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> debugDesc;
                 if (desc["gmg"].contains("debug"))
                 {
@@ -962,12 +963,13 @@ namespace ug
                         bool vtk = true;
                         bool conn_viewer = false;
                         typedef SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> TDW;
-                        SmartPtr<TDW> DWW = make_sp(new TDW (approxSpace));
+                        SmartPtr<TDW> DWW = make_sp(new TDW(approxSpace));
                         DWW->set_conn_viewer_output(conn_viewer);
                         DWW->set_vtk_output(vtk);
                         GMG->set_debug(DWW);
                     }
                 }
+
                 if (solverutil.hasComponent("Debugger") and !desc["gmg"].contains("debug"))
                 {
                     debugDesc = SetDebugger(desc, solverutil);
@@ -1056,6 +1058,7 @@ namespace ug
         parameters SolverUtil<TDomain, TAlgebra> &solverutil
         return GridFunctionDebugWriter<TDomain, TAlgebra>
         */
+
         template <typename TDomain, typename TAlgebra>
         SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> SetDebugger(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil)
         {
@@ -1063,6 +1066,7 @@ namespace ug
             debugger = std::get<SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>>>(solverutil.getComponent("debugger"));
             return debugger;
         }
+
         /*
          * Helper class to provide c++ util functions in lua.
          * We can instaciate this object in lua via
