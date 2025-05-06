@@ -871,7 +871,7 @@ namespace ug
                 // TF->set_debug(TF, transferDesc, transferDefault, solverutil);
                 UG_LOG("transfer found!\n");
                 GMG->set_transfer(TF);
-                /*
+                
                 // entweder mit boolean Objekt bauen oder direkt Objekt abfragen
 
                 SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> debugDesc;
@@ -880,7 +880,7 @@ namespace ug
                     if (debug){
                         bool vtk = true;
                         bool conn_viewer = false;
-                        typedef SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> TDW;
+                        typedef GridFunctionDebugWriter<TDomain, TAlgebra> TDW;
                         SmartPtr<TDW> DWW = make_sp(new TDW(approxSpace));
                         DWW->set_conn_viewer_output(conn_viewer);
                         DWW->set_vtk_output(vtk);
@@ -892,7 +892,7 @@ namespace ug
                     debugDesc = SetDebugger(desc, solverutil);
                     GMG->set_debug(debugDesc);
                 }
-                */
+                
 
                 bool gatheredBaseSolverIfAmbiguous = json_default_preconds["gmg"]["gatheredBaseSolverIfAmbiguous"];
                 UG_LOG("gatheredBaseSolverIfAMb found!\n")
@@ -961,11 +961,11 @@ namespace ug
 
         /*
         Set Debugger for different preconditioners and solvers
-
+    
         parameters nlohmann::json &desc
         parameters SolverUtil<TDomain, TAlgebra> &solverutil
         return GridFunctionDebugWriter<TDomain, TAlgebra>
-
+        */
         template<typename TDomain, typename TAlgebra>
         SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> SetDebugger(
             nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
@@ -974,7 +974,7 @@ namespace ug
                 solverutil.getComponent("debugger"));
             return debugger;
         }
-        */
+        
 
         /*
          * Helper class to provide c++ util functions in lua.
