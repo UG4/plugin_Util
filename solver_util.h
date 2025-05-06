@@ -228,12 +228,14 @@ namespace ug
 
         template<typename TDomain, typename TAlgebra>
         SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>>
+        //SmartPtr<ILinearIterator<typename TAlgebra::vector_type>>
         CreateLinearSolver(nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra> &solverutil){
             typedef typename TAlgebra::vector_type TVector;
             typedef LinearSolver<TVector> TLinSolv;
+            //typedef ILinearOperatorInverse<TVector> TLinSolv;
             typedef ILinearOperatorInverse<TVector> TReturn;
-            SmartPtr<TLinSolv> linSolver;
-
+            //SmartPtr<TLinSolv> linSolver;
+            SmartPtr<TReturn> linSolver;
             // load defaults
             nlohmann::json json_default_linearSolver = json_predefined_defaults::solvers["linearSolver"];
 
@@ -263,7 +265,8 @@ namespace ug
             if (type == "linear"){
                 UG_LOG("type solver is linear\n")
                 // create linear
-                linSolver = make_sp(new TLinSolv());
+                auto linear = make_sp(new TLinSolv());
+                linSolver = linear.template cast_dynamic<TReturn>();
 
                 // configure linear
                 precondtype = json_default_linearSolver["linear"]["precond"];
@@ -276,8 +279,8 @@ namespace ug
                 // create CGSolver
                 typedef CG<TVector> TCGSolver;
                 SmartPtr<TCGSolver> CG = make_sp(new TCGSolver());
-                linSolver = CG.template cast_dynamic<TLinSolv>();
-
+                //linSolver = CG.template cast_dynamic<TLinSolv>();
+                linSolver = CG.template cast_dynamic<TReturn>();
                 // configure cg
                 precondtype = json_default_linearSolver["cg"]["precond"];
                 convChecktype = json_default_linearSolver["cg"]["convCheck"];
@@ -289,8 +292,8 @@ namespace ug
                 // create BiCGStabSolver
                 typedef BiCGStab<TVector> TBiCGStabSolver;
                 SmartPtr<TBiCGStabSolver> BICGSTAB = make_sp(new TBiCGStabSolver());
-                linSolver = BICGSTAB.template cast_dynamic<TLinSolv>();
-
+                //linSolver = BICGSTAB.template cast_dynamic<TLinSolv>();
+                linSolver = BICGSTAB.template cast_dynamic<TReturn>();
                 // configure bicgstab
                 precondtype = json_default_linearSolver["bicgstab"]["precond"];
                 convChecktype = json_default_linearSolver["bicgstab"]["convCheck"];
@@ -311,8 +314,8 @@ namespace ug
                     restart = solverDesc["restart"];
                 }
                 GMRES = make_sp(new TGMRESSolver(restart));
-                linSolver = GMRES.template cast_dynamic<TLinSolv>();
-
+                //linSolver = GMRES.template cast_dynamic<TLinSolv>();
+                linSolver = GMRES.template cast_dynamic<TReturn>();
                 createPrecond = true;
                 createConvCheck = true;
             }
@@ -322,8 +325,11 @@ namespace ug
 
             #ifdef UG_USE_SUPERLU
                 UG_LOG("CreateLinearSolver,name_lu, AgglomeratingSolver(SuperLU()) \n");
-                linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new SuperLUSolver<TAlgebra>())))
-                           .template cast_dynamic<TLinSolv>();
+                auto SuperLU = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new SuperLUSolver<TAlgebra>())));
+                //linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new SuperLUSolver<TAlgebra>())))
+                //           .template cast_dynamic<TLinSolv>();
+                auto test = SuperLU.template cast_dynamic<ILinearOperatorInverse<typename TAlgebra::vector_type>>();
+                linSolver = SuperLU.template cast_dynamic<TReturn>();
 
             #else
                 UG_LOG("CreateLinearSolver,name_lu, AgglomeratingSolver(LU_solver) \n")
@@ -365,7 +371,7 @@ namespace ug
                 LU_solver->set_info(info);
 
                 // create AgglomeratingSolver(LU_Solver))
-                linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver)).template cast_dynamic<TLinSolv>();
+                linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver)).template cast_dynamic<TReturn>();
             }
             else if (type == "superlu"){
                 UG_LOG("CreateLinearSolver,name_superlu, AgglomeratingSolver(SuperLU()) \n")
@@ -384,7 +390,7 @@ namespace ug
                 // create AgglomeratingSolver(SuperLU_Solver))
                 typedef AgglomeratingSolver<TAlgebra> TAggSolver;
                 SmartPtr<TAggSolver> superLU = make_sp(new TAggSolver(linOpInverse));
-                linSolver = superLU.template cast_dynamic<TLinSolv>();
+                linSolver = superLU.template cast_dynamic<TReturn>();
             }
             
             // Checks for a valid solver
@@ -415,7 +421,7 @@ namespace ug
                 UG_LOG(precondDesc.dump(4) << "\n")
                 SmartPtr<ILinearIterator<typename TAlgebra::vector_type>> preconditioner = CreatePreconditioner(
                     precondDesc, solverutil);
-                linSolver->set_preconditioner(preconditioner);
+                (linSolver.template cast_dynamic<IPreconditionedLinearOperatorInverse<typename TAlgebra::vector_type>>())->set_preconditioner(preconditioner);
             }
 
             // Convergence Check set
@@ -436,7 +442,7 @@ namespace ug
 
             // TODO: SetDebugWriter(linSolver, solverDesc, defaults, solverutil)
 
-            return linSolver.template cast_dynamic<TReturn>();
+            return linSolver;//.template cast_dynamic<TReturn>();
         }
 
 
