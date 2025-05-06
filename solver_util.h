@@ -37,49 +37,41 @@
 #include "lib_algebra/operator/linear_solver/agglomerating_solver.h"
 #include "lib_algebra/operator/linear_solver/lu.h"
 #include "../SuperLU6/super_lu.h"
+
 namespace ug
 {
     namespace Util
     {
-
-        void CondAbort(bool condition, std::string message)
-        {
+        void CondAbort(bool condition, std::string message){
             UG_ASSERT(!condition, "ERROR in util.solver: " << message);
         }
-        template <typename TAlgebra>
-        SmartPtr<StdConvCheck<typename TAlgebra::vector_type>> CreateConvCheck(nlohmann::json &descriptor)
-        {
 
+        template<typename TAlgebra>
+        SmartPtr<StdConvCheck<typename TAlgebra::vector_type>> CreateConvCheck(nlohmann::json &descriptor){
             typedef typename TAlgebra::vector_type vector_type;
             // set parameters from descriptor attributes
             bool verbose = false;
-            if (descriptor.contains("verbose"))
-            {
+            if (descriptor.contains("verbose")){
                 verbose = descriptor["verbose"];
             }
             std::string name = "standard";
-            if (descriptor.contains("type"))
-            {
+            if (descriptor.contains("type")){
                 name = descriptor["type"];
             }
             number iterations = 100;
-            if (descriptor.contains("iterations"))
-            {
+            if (descriptor.contains("iterations")){
                 iterations = descriptor["iterations"];
             }
             number reduction = 1e-6;
-            if (descriptor.contains("reduction"))
-            {
+            if (descriptor.contains("reduction")){
                 reduction = descriptor["reduction"];
             }
             number absolute = 1e-12;
-            if (descriptor.contains("absolute"))
-            {
+            if (descriptor.contains("absolute")){
                 absolute = descriptor["absolute"];
             }
             bool suppress_unsuccessful = false;
-            if (descriptor.contains("suppress_unsuccessful"))
-            {
+            if (descriptor.contains("suppress_unsuccessful")){
                 suppress_unsuccessful = descriptor["suppress_unsuccessful"];
             }
 
@@ -92,8 +84,9 @@ namespace ug
                                               suppress_unsuccessful));
             return convCheck;
         }
+
         // Variant type for storing different solver components
-        template <typename TDomain, typename TAlgebra>
+        template<typename TDomain, typename TAlgebra>
         using SolverComponent = std::variant<
             SmartPtr<ApproximationSpace<TDomain>>,
             SmartPtr<ILU<TAlgebra>>,
@@ -119,57 +112,48 @@ namespace ug
             SmartPtr<LU<TAlgebra>>,
             SmartPtr<AgglomeratingSolver<TAlgebra>>>;
 
-        template <typename TDomain, typename TAlgebra>
-        class SolverUtil
-        {
+        template<typename TDomain, typename TAlgebra>
+        class SolverUtil{
             /// Container class for objects used in the CreateSolver routine.
             /*
              * components are stored as std::variant and populate an unordered
              * map for access. Calls to various subroutines are made
              * */
         public:
-            void setDiscretization(const std::string key, SmartPtr<IAssemble<TAlgebra>> component)
-            {
-                setComponent(key, component);
-            }
-            void setApproximationSpace(const std::string key, SmartPtr<ApproximationSpace<TDomain>> component)
-            {
-                setComponent(key, component);
-            }
-            void setDebug(const std::string key, SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> component)
-            {
+            void setDiscretization(const std::string key, SmartPtr<IAssemble<TAlgebra>> component){
                 setComponent(key, component);
             }
 
-            void setComponent(const std::string &key, SolverComponent<TDomain, TAlgebra> component)
-            {
+            void setApproximationSpace(const std::string key, SmartPtr<ApproximationSpace<TDomain>> component){
+                setComponent(key, component);
+            }
+
+            void setDebug(const std::string key, SmartPtr<ug::GridFunctionDebugWriter<TDomain, TAlgebra>> component){
+                setComponent(key, component);
+            }
+
+            void setComponent(const std::string &key, SolverComponent<TDomain, TAlgebra> component){
                 components[key] = component;
             }
 
-            SolverComponent<TDomain, TAlgebra> getComponent(const std::string &key) const
-            {
+            SolverComponent<TDomain, TAlgebra> getComponent(const std::string &key) const{
                 auto it = components.find(key);
-                if (it != components.end())
-                {
+                if (it != components.end()){
                     return it->second;
                 }
                 UG_THROW("SolverUtil.getComponent(" << key << "): no component named " << key << " found");
             }
 
-            bool hasComponent(const std::string &key) const
-            {
-
+            bool hasComponent(const std::string &key) const{
                 auto it = components.find(key);
-                if (it != components.end())
-                {
+                if (it != components.end()){
                     return true;
                 }
                 return false;
             }
 
-            template <typename T>
-            SmartPtr<T> getComponentAs(const std::string &key) const
-            {
+            template<typename T>
+            SmartPtr<T> getComponentAs(const std::string &key) const{
                 return std::get<SmartPtr<T>>(getComponent(key));
             }
 
@@ -177,9 +161,8 @@ namespace ug
             std::unordered_map<std::string, SolverComponent<TDomain, TAlgebra>> components;
         };
 
-        template <typename TAlgebra>
-        SmartPtr<StandardLineSearch<typename TAlgebra::vector_type>> CreateLineSearch(nlohmann::json &desc)
-        {
+        template<typename TAlgebra>
+        SmartPtr<StandardLineSearch<typename TAlgebra::vector_type>> CreateLineSearch(nlohmann::json &desc){
             // typedef for convenience
             typedef StandardLineSearch<typename TAlgebra::vector_type> line_search_type;
             SmartPtr<line_search_type> ls;
@@ -191,37 +174,30 @@ namespace ug
             // default
             std::string type = "standard";
             // input type
-            if (desc.contains("type"))
-            {
+            if (desc.contains("type")){
                 type = desc["type"];
             }
 
-            if (type == "standard")
-            {
+            if (type == "standard"){
                 // handle parameters of standard line search
                 int maxSteps = json_default_lineSearch[type]["maxSteps"];
-                if (desc.contains("maxSteps"))
-                {
+                if (desc.contains("maxSteps")){
                     maxSteps = desc["maxSteps"];
                 }
                 number lambdaStart = json_default_lineSearch[type]["lambdaStart"];
-                if (desc.contains("lambdaStart"))
-                {
+                if (desc.contains("lambdaStart")){
                     lambdaStart = desc["lambdaStart"];
                 }
                 number lambdaReduce = json_default_lineSearch[type]["lambdaReduce"];
-                if (desc.contains("lambdaReduce"))
-                {
+                if (desc.contains("lambdaReduce")){
                     lambdaReduce = desc["lambdaReduce"];
                 }
                 bool acceptBest = json_default_lineSearch[type]["acceptBest"];
-                if (desc.contains("acceptBest"))
-                {
+                if (desc.contains("acceptBest")){
                     acceptBest = desc["acceptBest"];
                 }
                 bool checkAll = json_default_lineSearch[type]["checkAll"];
-                if (desc.contains("checkAll"))
-                {
+                if (desc.contains("checkAll")){
                     checkAll = desc["checkAll"];
                 }
                 // create line search with chosen parameters
@@ -231,18 +207,15 @@ namespace ug
                                                   acceptBest,
                                                   checkAll));
                 // set conditional parameters
-                if (desc.contains("verbose"))
-                {
+                if (desc.contains("verbose")){
                     bool verbose = desc["verbose"];
                     ls->set_verbose(verbose);
                 }
-                if (desc.contains("suffDesc"))
-                {
+                if (desc.contains("suffDesc")){
                     number suffDesc = desc["suffDesc"];
                     ls->set_suff_descent_factor(suffDesc);
                 }
-                if (desc.contains("maxDefect"))
-                {
+                if (desc.contains("maxDefect")){
                     number maxDefect = desc["maxDefect"];
                     ls->set_maximum_defect(maxDefect);
                 }
@@ -253,11 +226,9 @@ namespace ug
             return ls;
         }
 
-        template <typename TDomain, typename TAlgebra>
+        template<typename TDomain, typename TAlgebra>
         SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>>
-        CreateLinearSolver(nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra> &solverutil)
-        {
-
+        CreateLinearSolver(nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra> &solverutil){
             typedef typename TAlgebra::vector_type TVector;
             typedef LinearSolver<TVector> TLinSolv;
             typedef ILinearOperatorInverse<TVector> TReturn;
@@ -274,6 +245,7 @@ namespace ug
 
             // if no descriptor given, create default linear solver
             // if (!solverDesc.contains("linearSolver")){
+            // if (!solverDesc.contains("linearSolver")){
             //    UG_LOG("default LinearSolver\n")
             //    SmartPtr<ILU<TAlgebra>> ilu = make_sp<ILU<TAlgebra>>(new ILU<TAlgebra>());
             //    SmartPtr<StdConvCheck<TVector>> convCheck = make_sp<StdConvCheck<TVector>>(
@@ -285,12 +257,10 @@ namespace ug
             //}
 
             std::string type = "linear";
-            if (solverDesc.contains("type"))
-            {
+            if (solverDesc.contains("type")){
                 type = solverDesc["type"];
             }
-            if (type == "linear")
-            {
+            if (type == "linear"){
                 UG_LOG("type solver is linear\n")
                 // create linear
                 linSolver = make_sp(new TLinSolv());
@@ -301,8 +271,7 @@ namespace ug
                 createPrecond = true;
                 createConvCheck = true;
             }
-            else if (type == "cg")
-            {
+            else if (type == "cg"){
                 UG_LOG("type solver is cg\n")
                 // create CGSolver
                 typedef CG<TVector> TCGSolver;
@@ -315,8 +284,7 @@ namespace ug
                 createPrecond = true;
                 createConvCheck = true;
             }
-            else if (type == "bicgstab")
-            {
+            else if (type == "bicgstab"){
                 UG_LOG("type solver is bicgstab\n")
                 // create BiCGStabSolver
                 typedef BiCGStab<TVector> TBiCGStabSolver;
@@ -329,68 +297,69 @@ namespace ug
                 createPrecond = true;
                 createConvCheck = true;
             }
-            else if (type == "gmres")
-            {
+            else if (type == "gmres"){
                 UG_LOG("type solver is gmres\n")
                 // create gmres
+                typedef GMRES<TVector> TGMRESSolver;
+                SmartPtr<TGMRESSolver> GMRES;
                 int restart = 5;
-                if (solverDesc.contains("restart"))
-                {
+                if (json_default_linearSolver.contains("gmres") &&
+                    json_default_linearSolver["gmres"].contains("restart")){
+                    restart = json_default_linearSolver["gmres"]["restart"];
+                }
+                if (solverDesc.contains("restart")){
                     restart = solverDesc["restart"];
                 }
-                linSolver = make_sp(new GMRES<TVector>(restart)).template cast_dynamic<TLinSolv>();
+                GMRES = make_sp(new TGMRESSolver(restart));
+                linSolver = GMRES.template cast_dynamic<TLinSolv>();
 
                 createPrecond = true;
                 createConvCheck = true;
             }
-            else if (type == "lu")
-            {
-                // AgglomeratingSolver and HasClassGroup
+            else if (type == "lu"){
+                UG_LOG("CreateLinearSolver, type solver is lu \n")
+                // AgglomeratingSolver
 
-                bool ScriptHasClassGroup(const char *classname);
-                if (ScriptHasClassGroup("SuperLU"))
-                {
-                    linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new SuperLUSolver<TAlgebra>()))).template cast_dynamic<TLinSolv>();
+            #ifdef UG_USE_SUPERLU
+                UG_LOG("CreateLinearSolver,name_lu, AgglomeratingSolver(SuperLU()) \n");
+                linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new SuperLUSolver<TAlgebra>())))
+                           .template cast_dynamic<TLinSolv>();
+
+            #else
+                UG_LOG("CreateLinearSolver,name_lu, AgglomeratingSolver(LU_solver) \n")
+                typedef LU<TAlgebra> TLU;
+                SmartPtr<TLU> LU_solver = make_sp(new TLU());
+
+                bool showProgress = json_default_linearSolver["lu"]["showProgress"];
+                if (solverDesc.contains("showProgress") && !solverDesc["showProgress"].is_null()){
+                    showProgress = solverDesc["showProgress"];
                 }
-                else
-                {
-                    typedef LU<TAlgebra> TLU;
-                    SmartPtr<TLU> LU_solver = make_sp(new TLU());
+                LU_solver->set_show_progress(showProgress);
 
-                    bool showProgress = json_default_linearSolver["lu"]["showProgress"];
-                    if (solverDesc.contains("showProgress") && !solverDesc["showProgress"].is_null())
-                    {
-                        showProgress = solverDesc["showProgress"];
-                    }
-                    LU_solver->set_show_progress(showProgress);
-
-                    bool info = json_default_linearSolver["lu"]["info"];
-                    if (solverDesc.contains("info"))
-                    {
-                        info = solverDesc["info"];
-                    }
-                    LU_solver->set_info(info);
-                    // SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>> LU_solver = make_sp(new SuperLUSolver<TAlgebra>());
-                    // SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>> linSolver = GetCreateLinearSolver(LU_solver);
-                    linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver)).template cast_dynamic<TLinSolv>();
+                bool info = json_default_linearSolver["lu"]["info"];
+                if (solverDesc.contains("info")){
+                    info = solverDesc["info"];
                 }
+                LU_solver->set_info(info);
+                linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver))
+                            .template cast_dynamic<TLinSolv>();
+
+            #endif
             }
-            else if (type == "uglu")
-            {
+            else if (type == "uglu"){
+                UG_LOG("CreateLinearSolver,name_uglu, AgglomeratingSolver(LU_solver) \n")
                 // create LU Solver
                 typedef LU<TAlgebra> TLU;
                 SmartPtr<TLU> LU_solver = make_sp(new TLU());
 
                 bool showProgress = json_default_linearSolver["uglu"]["showProgress"];
-                if (solverDesc.contains("showProgress") && !solverDesc["showProgress"].is_null())
-                {
+                if (solverDesc.contains("showProgress") && !solverDesc["showProgress"].is_null()){
                     showProgress = solverDesc["showProgress"];
                 }
                 LU_solver->set_show_progress(showProgress);
 
                 bool info = json_default_linearSolver["uglu"]["info"];
-                if (solverDesc.contains("info"))
-                {
+                if (solverDesc.contains("info")){
                     info = solverDesc["info"];
                 }
                 LU_solver->set_info(info);
@@ -398,8 +367,8 @@ namespace ug
                 // create AgglomeratingSolver(LU_Solver))
                 linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver)).template cast_dynamic<TLinSolv>();
             }
-            else if (type == "superlu")
-            {
+            else if (type == "superlu"){
+                UG_LOG("CreateLinearSolver,name_superlu, AgglomeratingSolver(SuperLU()) \n")
                 // create SuperLU Solver
                 typedef SuperLUSolver<TAlgebra> TSupLUSolv;
                 SmartPtr<TSupLUSolv> superlu = make_sp(new TSupLUSolv());
@@ -415,60 +384,51 @@ namespace ug
                 // create AgglomeratingSolver(SuperLU_Solver))
                 typedef AgglomeratingSolver<TAlgebra> TAggSolver;
                 SmartPtr<TAggSolver> superLU = make_sp(new TAggSolver(linOpInverse));
-                linSolver = superLU.template cast_dynamic<TLinSolv>(); //<ILinearOperatorInverse<typename TAlgebra::vector_type>>();
+                linSolver = superLU.template cast_dynamic<TLinSolv>();
             }
-            else
-            {
-                UG_THROW("Invalid linear solver specified: " << type);
-            }
-
+            
             // Checks for a valid solver
             CondAbort(linSolver.invalid(), "Invalid linear solver specified: " + type);
 
             // Checks if solverDesc has precond and overwrite default
-            if (solverDesc.contains("precond") && solverDesc["precond"].is_string())
-            {
+            if (solverDesc.contains("precond") && solverDesc["precond"].is_string()){
                 precondtype = solverDesc["precond"];
             }
             // Checks if solverDesc has convCheck and overwrite default
-            if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_string())
-            {
+            if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_string()){
                 convChecktype = solverDesc["convCheck"];
             }
 
             // Preconditioner set on linear, cd, bicgstab, gmres
-            if (createPrecond)
-            {
+            if (createPrecond){
                 nlohmann::json precondDesc;
 
-                if (solverDesc.contains("precond") && solverDesc["precond"].is_object())
-                {
+                if (solverDesc.contains("precond") && solverDesc["precond"].is_object()){
+                    UG_LOG("CreateLinearSolver, solverDesc is object \n")
                     precondDesc = solverDesc["precond"];
                 }
-                else
-                {
+                else{
+                    UG_LOG("CreateLinearSolver, solverDesc is string \n")
                     precondDesc["type"] = precondtype;
                 }
-                UG_LOG("precondDesc: \n")
+                UG_LOG("CreateLinearSolver, precondDesc: \n")
                 UG_LOG(precondDesc.dump(4) << "\n")
-                SmartPtr<ILinearIterator<typename TAlgebra::vector_type>> preconditioner = CreatePreconditioner(precondDesc, solverutil);
+                SmartPtr<ILinearIterator<typename TAlgebra::vector_type>> preconditioner = CreatePreconditioner(
+                    precondDesc, solverutil);
                 linSolver->set_preconditioner(preconditioner);
             }
 
             // Convergence Check set
-            if (createConvCheck)
-            {
+            if (createConvCheck){
                 nlohmann::json convCheckDesc;
 
-                if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_object())
-                {
+                if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_object()){
                     convCheckDesc = solverDesc["convCheck"];
                 }
-                else
-                {
+                else{
                     convCheckDesc["type"] = convChecktype;
                 }
-                UG_LOG("convCheckDesc: \n")
+                UG_LOG("CreateLinearSolver, convCheckDesc: \n")
                 UG_LOG(convCheckDesc.dump(4) << "\n")
                 SmartPtr<StdConvCheck<TVector>> convCheck = CreateConvCheck<TAlgebra>(convCheckDesc);
                 linSolver->set_convergence_check(convCheck);
@@ -479,49 +439,53 @@ namespace ug
             return linSolver.template cast_dynamic<TReturn>();
         }
 
-        template <typename TDomain, typename TAlgebra>
+
+        template<typename TDomain, typename TAlgebra>
         SmartPtr<NewtonSolver<TAlgebra>>
-        CreateNewtonSolver(nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra> &solverutil)
-        {
+        CreateNewtonSolver(nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra> &solverutil){
             UG_LOG("Creating NewtonSolver\n")
+            std::cout << "[DEBUG] JSON input to CreateNewtonSolver:\n" << solverDesc.dump(4) << std::endl;
             nlohmann::json json_default_nonlinearSolver = json_predefined_defaults::solvers["nonlinearSolver"];
 
             // PrepareSolverUtil<TDomain, TAlgebra>();
             std::string type = "linear";
-            if (solverDesc.contains("type"))
-            {
+            if (solverDesc.contains("type")){
                 type = solverDesc["type"];
             }
-            if (type == "newton")
-            {
-                UG_LOG("type solver is newton \n")
+            if (type == "newton"){
+                UG_LOG("CreateNewtonSolver, type solver is newton \n")
+
                 auto newtonSolver = make_sp(new NewtonSolver<TAlgebra>());
 
-                // linear solver default
-                std::string linSolverType = json_default_nonlinearSolver["newton"]["linSolver"];
-
+                // linear solver
                 nlohmann::json linSolverDesc;
 
                 // get descriptor for linear solver
-                if (solverDesc.contains("linSolver") && solverDesc["linSolver"].is_string())
-                {
-                    UG_LOG("linSolver is a string: \n");
-                    linSolverType = solverDesc["linSolver"];
-                    linSolverDesc["type"] = linSolverType;
-                    UG_LOG(linSolverType << "\n");
+                if (solverDesc.contains("linSolver")){
+                    if (solverDesc["linSolver"].is_string()){
+                        UG_LOG("CreateNewtonSolver, linSolver is a string: \n");
+                        //linSolverType = solverDesc["linSolver"];
+                        linSolverDesc["type"] = solverDesc["linSolver"];
+                    }
+                    else if (solverDesc["linSolver"].is_object()){
+                        UG_LOG("CreateNewtonSolver, linSolver is an object \n");
+                        linSolverDesc = solverDesc["linSolver"];
+                    }
+                    else{
+                        UG_LOG(">> CreateNewtonSolver, linSolver must be a string or an object \n")
+                    }
                 }
-                else if (solverDesc.contains("linSolver") && solverDesc["linSolver"].is_object())
-                {
-                    UG_LOG("linSolver is an object \n");
-                    linSolverDesc = solverDesc["linSolver"];
-                    UG_LOG(linSolverDesc.dump(4) << "\n");
-                }
-                else
-                {
-                    UG_LOG(">> linSolver does not exist, use default \n")
-                }
+                else{
+                    // use default
+                    if (json_default_nonlinearSolver["newton"]["linSolver"].is_string()){
+                        linSolverDesc["type"] = json_default_nonlinearSolver["newton"]["linSolver"];
+                    }
+                    else if (json_default_nonlinearSolver["newton"]["linSolver"].is_object()){
+                        linSolverDesc = json_default_nonlinearSolver["newton"]["linSolver"];
+                    }
 
-                UG_LOG("linSolverDesc:\n");
+                }
+                UG_LOG("CreateNewtonSolver, linSolverDesc:\n");
                 UG_LOG(linSolverDesc.dump(4) << "\n");
 
                 SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>> linSolver;
@@ -531,8 +495,7 @@ namespace ug
                 // convergence check
                 std::string convCheckType = json_default_nonlinearSolver["newton"]["convCheck"];
                 // get descriptor for convergence check
-                if (solverDesc.contains("convCheck"))
-                {
+                if (solverDesc.contains("convCheck")){
                     convCheckType = solverDesc["convCheck"];
                 }
                 nlohmann::json convCheckDesc;
@@ -543,27 +506,23 @@ namespace ug
 
                 // line search
                 std::string lineSearchType = "standard";
-                if (json_default_nonlinearSolver["newton"]["lineSearch"].is_string())
-                {
+                if (json_default_nonlinearSolver["newton"]["lineSearch"].is_string()){
                     lineSearchType = json_default_nonlinearSolver["newton"]["lineSearch"];
                 }
                 // get descriptor for line search
-                if (solverDesc.contains("lineSearch"))
-                {
+                if (solverDesc.contains("lineSearch")){
                     lineSearchType = solverDesc["lineSearch"];
                 }
                 nlohmann::json lineSearchDesc;
                 lineSearchDesc["type"] = lineSearchType;
                 // if line_Search not null
-                if (!lineSearchType.empty() && lineSearchType != "none")
-                {
+                if (!lineSearchType.empty() && lineSearchType != "none"){
                     SmartPtr<StandardLineSearch<typename TAlgebra::vector_type>> lineSearch;
                     lineSearch = CreateLineSearch<TAlgebra>(lineSearchDesc);
                     newtonSolver->set_line_search(lineSearch);
                 }
                 // set reassemble_J_freq if exists
-                if (solverDesc.contains("reassemble_J_freq") && solverDesc["reassemble_J_freq"].is_number())
-                {
+                if (solverDesc.contains("reassemble_J_freq") && solverDesc["reassemble_J_freq"].is_number()){
                     newtonSolver->set_reassemble_J_freq(solverDesc["reassemble_J_freq"]);
                 }
 
@@ -571,16 +530,13 @@ namespace ug
 
                 return newtonSolver;
             }
-            else
-            {
-                UG_THROW("CreateNewtonSolver: Only 'newton' solver type is supported in this function.")
-            }
+            UG_THROW("CreateNewtonSolver: Only 'newton' solver type is supported in this function.")
         }
 
-        template <typename TDomain, typename TAlgebra>
+
+        template<typename TDomain, typename TAlgebra>
         SmartPtr<ILinearIterator<typename TAlgebra::vector_type>>
-        CreatePreconditioner(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil)
-        {
+        CreatePreconditioner(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
             typedef typename TAlgebra::vector_type TVector;
             typedef ILinearIterator<typename TAlgebra::vector_type> TPrecond;
 
@@ -597,64 +553,56 @@ namespace ug
 
             SmartPtr<ApproximationSpace<TDomain>> approxSpace = NullSmartPtr();
 
-            if (solverutil.hasComponent("approxSpace"))
-            {
+            if (solverutil.hasComponent("approxSpace")){
                 // approxSpace = solverutil.getComponent("approxSpace");
             }
 
             std::string type = desc["type"];
-            if (type == "ilu")
-            {
+            if (type == "ilu"){
+                UG_LOG("CreatePreconditioner ilu \n")
                 // create ilu
                 typedef ILU<TAlgebra> TILU;
                 SmartPtr<TILU> ILU = make_sp(new TILU());
 
                 // configure ilu
                 number beta = json_default_preconds["ilu"]["beta"];
-                if (desc.contains("beta"))
-                {
+                if (desc.contains("beta")){
                     beta = desc["beta"];
                 }
                 ILU->set_beta(beta);
 
                 number damping = json_default_preconds["ilu"]["damping"];
-                if (desc.contains("damping"))
-                {
+                if (desc.contains("damping")){
                     damping = desc["damping"];
                 }
                 ILU->set_damp(damping);
 
                 bool sort = json_default_preconds["ilu"]["sort"];
-                if (desc.contains("sort"))
-                {
+                if (desc.contains("sort")){
                     sort = desc["sort"];
                 }
                 ILU->set_sort(sort);
 
                 number sortEps = json_default_preconds["ilu"]["sortEps"];
-                if (desc.contains("sortEps"))
-                {
+                if (desc.contains("sortEps")){
                     sortEps = desc["sortEps"];
                 }
                 ILU->set_sort_eps(sortEps);
 
                 number inversionEps = json_default_preconds["ilu"]["inversionEps"];
-                if (desc.contains("inversionEps"))
-                {
+                if (desc.contains("inversionEps")){
                     inversionEps = desc["inversionEps"];
                 }
                 ILU->set_inversion_eps(inversionEps);
 
                 bool consistentInterfaces = json_default_preconds["ilu"]["consistentInterfaces"];
-                if (desc.contains("consistentInterfaces"))
-                {
+                if (desc.contains("consistentInterfaces")){
                     consistentInterfaces = desc["consistentInterfaces"];
                 }
                 ILU->enable_consistent_interfaces(consistentInterfaces);
 
                 bool overlap = json_default_preconds["ilu"]["overlap"];
-                if (desc.contains("overlap"))
-                {
+                if (desc.contains("overlap")){
                     overlap = desc["overlap"];
                 }
                 ILU->enable_overlap(overlap);
@@ -665,14 +613,13 @@ namespace ug
                 // Cast ILU to IPreconditioner for return
                 preconditioner = ILU.template cast_static<TPrecond>();
             }
-            else if (type == "ilut")
-            {
+            else if (type == "ilut"){
+                UG_LOG("CreatePreconditioner, creating ilut \n")
                 // create ilut
                 typedef ILUTPreconditioner<TAlgebra> TILUT;
 
                 number threshold = json_default_preconds["ilut"]["threshold"];
-                if (desc.contains("threshold"))
-                {
+                if (desc.contains("threshold")){
                     threshold = desc["threshold"];
                 }
                 SmartPtr<TILUT> ILUT = make_sp(new TILUT(threshold));
@@ -680,87 +627,75 @@ namespace ug
                 // TODO: ordering = CreateOrdering
                 // TODO: precond.set_ordering_algorithm(ordering)
             }
-            else if (type == "jac")
-            {
-                UG_LOG("creating jacobi\n")
+            else if (type == "jac"){
+                UG_LOG("CreatePreconditioner jacobi \n")
                 typedef Jacobi<TAlgebra> TJAC;
                 SmartPtr<TJAC> JAC = make_sp(new TJAC());
-                UG_LOG("damping default\n")
+                UG_LOG("jacobi, damping default\n")
                 number damping = json_default_preconds["jac"]["damping"];
-                UG_LOG("damping desc\n")
-                if (desc.contains("damping"))
-                {
+                UG_LOG("jacobi, damping desc\n")
+                if (desc.contains("damping")){
                     damping = desc["damping"];
                 }
-                UG_LOG("set damping\n")
+                UG_LOG("jacobi, set damping\n")
                 JAC->set_damp(damping);
                 preconditioner = JAC.template cast_static<TPrecond>();
             }
-            else if (type == "gs")
-            {
-                UG_LOG("creating gauss seidel\n")
+            else if (type == "gs"){
+                UG_LOG("CreatePreconditioner gauss seidel\n")
                 typedef GaussSeidel<TAlgebra> TGS;
                 SmartPtr<TGS> GS = make_sp(new TGS());
                 UG_LOG("consistentInterfaces default\n")
 
                 bool consistentInterfaces = json_default_preconds["gs"]["consistentInterfaces"];
                 UG_LOG("consistentInterfaces desc\n")
-                if (desc.contains("consistentInterfaces"))
-                {
+                if (desc.contains("consistentInterfaces")){
                     consistentInterfaces = desc["consistentInterfaces"];
                 }
                 UG_LOG("enable consistentInterfaces\n")
                 GS->enable_consistent_interfaces(consistentInterfaces);
 
                 bool overlap = json_default_preconds["gs"]["overlap"];
-                if (desc.contains("overlap"))
-                {
+                if (desc.contains("overlap")){
                     overlap = desc["overlap"];
                 }
                 UG_LOG("enable overlap\n")
                 GS->enable_overlap(overlap);
                 preconditioner = GS.template cast_static<TPrecond>();
             }
-            else if (type == "sgs")
-            {
-                UG_LOG("creating symmetric gauss seidel\n")
+            else if (type == "sgs"){
+                UG_LOG("CreatePreconditioner symmetric gauss seidel\n")
                 typedef SymmetricGaussSeidel<TAlgebra> TSGS;
                 SmartPtr<TSGS> SGS = make_sp(new TSGS());
                 bool consistentInterfaces = json_default_preconds["sgs"]["consistentInterfaces"];
-                if (desc["sgs"].contains("consistentInterfaces"))
-                {
+                if (desc["sgs"].contains("consistentInterfaces")){
                     consistentInterfaces = desc["sgs"]["consistentInterfaces"];
                 }
                 SGS->enable_consistent_interfaces(consistentInterfaces);
 
                 bool overlap = json_default_preconds["sgs"]["overlap"];
-                if (desc["sgs"].contains("overlap"))
-                {
+                if (desc["sgs"].contains("overlap")){
                     overlap = desc["sgs"]["overlap"];
                 }
                 SGS->enable_overlap(overlap);
                 preconditioner = SGS.template cast_static<TPrecond>();
             }
-            else if (type == "egs")
-            {
-                UG_LOG("creating element gauss seidel\n")
+            else if (type == "egs"){
+                UG_LOG("CreatePreconditioner element gauss seidel\n")
                 typedef ElementGaussSeidel<TDomain, TAlgebra> TEGS;
                 SmartPtr<TEGS> EGS = make_sp(new TEGS());
                 preconditioner = EGS.template cast_static<TPrecond>();
             }
-            else if (type == "cgs")
-            {
-                UG_LOG("creating component gauss seidel\n")
+            else if (type == "cgs"){
+                UG_LOG("CreatePreconditioner component gauss seidel\n")
                 std::vector<std::string> vFullRowCmp;
                 typedef ComponentGaussSeidel<TDomain, TAlgebra> TCGS;
 
                 number relax = 1.0;
-                if (json_default_preconds.contains("cgs") && json_default_preconds["cgs"].contains("relax"))
-                {
+                if (json_default_preconds.contains("cgs") && json_default_preconds["cgs"].contains("relax")){
                     relax = json_default_preconds["cgs"]["relax"];
                 }
-                if (desc.contains("relax"))
-                {
+                if (desc.contains("relax")){
                     relax = desc["relax"];
                 }
 
@@ -770,70 +705,59 @@ namespace ug
                 SmartPtr<TCGS> CGS = make_sp(new TCGS(relax, vFullRowCmp));
 
                 number alpha = 1.0;
-                if (json_default_preconds.contains("cgs") && json_default_preconds["cgs"].contains("alpha"))
-                {
+                if (json_default_preconds.contains("cgs") && json_default_preconds["cgs"].contains("alpha")){
                     alpha = json_default_preconds["cgs"]["alpha"];
                 }
-                if (desc.contains("alpha"))
-                {
+                if (desc.contains("alpha")){
                     alpha = desc["alpha"];
                 }
-                UG_LOG("set alpha\n")
+                UG_LOG("cgs, set alpha\n")
                 CGS->set_alpha(alpha);
 
                 number beta = 1.0;
-                if (json_default_preconds.contains("cgs") && json_default_preconds["cgs"].contains("beta"))
-                {
+                if (json_default_preconds.contains("cgs") && json_default_preconds["cgs"].contains("beta")){
                     beta = json_default_preconds["cgs"]["beta"];
                 }
-                if (desc.contains("beta"))
-                {
+                if (desc.contains("beta")){
                     beta = desc["beta"];
                 }
-                UG_LOG("set beta\n")
+                UG_LOG("cgs, set beta\n")
                 CGS->set_beta(beta);
 
                 bool weights = false;
-                if (json_default_preconds.contains("cgs") && json_default_preconds["cgs"].contains("weights"))
-                {
+                if (json_default_preconds.contains("cgs") && json_default_preconds["cgs"].contains("weights")){
                     weights = json_default_preconds["cgs"]["weights"];
                 }
-                if (desc.contains("weights"))
-                {
+                if (desc.contains("weights")){
                     weights = desc["weights"];
                 }
-                UG_LOG("enable weights\n")
+                UG_LOG("cgs, enable weights\n")
                 CGS->set_weights(weights);
 
                 preconditioner = CGS.template cast_static<TPrecond>();
             }
-            else if (type == "ssc")
-            {
+            else if (type == "ssc"){
                 // TODO:Duy create ssc
             }
-            else if (type == "gmg")
-            {
-
-                UG_LOG("Creating Geometric MultiGrid (GMG)\n");
+            else if (type == "gmg"){
+                UG_LOG("CreatePreconditioner Geometric MultiGrid (GMG)\n");
                 // idea: dont convert the objects of the lua table into json give them directly to the CreatePreconditioner Function
                 typedef AssembledMultiGridCycle<TDomain, TAlgebra> TGMG;
                 SmartPtr<ApproximationSpace<TDomain>> approxSpace;
                 SmartPtr<TGMG> GMG = make_sp(new TGMG());
-                if (solverutil.hasComponent("approxSpace"))
-                {
+                if (solverutil.hasComponent("approxSpace")){
                     UG_LOG("ApproximationSpace found!\n");
-                    approxSpace = std::get<SmartPtr<ApproximationSpace<TDomain>>>(solverutil.getComponent("approxSpace"));
+                    approxSpace = std::get<SmartPtr<ApproximationSpace<TDomain>>>(
+                        solverutil.getComponent("approxSpace"));
 
                     SmartPtr<TGMG> GMG = make_sp(new TGMG(approxSpace));
                 }
-                else
-                {
+                else{
                     UG_LOG("An ApproximationSpace is required to create a 'gmg' solver.\n");
                     exit(0);
                 }
                 std::string baseSolverType = json_default_preconds["gmg"]["baseSolver"];
-                if (desc["gmg"].contains("baseSolver"))
-                {
+                if (desc["gmg"].contains("baseSolver")){
                     baseSolverType = desc["gmg"]["baseSolver"];
                 }
                 nlohmann::json baseSolverDesc;
@@ -843,8 +767,7 @@ namespace ug
                 GMG->set_base_solver(CreateLinearSolver(baseSolverDesc, solverutil));
 
                 std::string smootherType = json_default_preconds["gmg"]["smoother"];
-                if (desc["gmg"].contains("smoother"))
-                {
+                if (desc["gmg"].contains("smoother")){
                     smootherType = desc["gmg"]["smoother"];
                 }
                 nlohmann::json smootherTypeDesc;
@@ -854,63 +777,56 @@ namespace ug
                 GMG->set_smoother(smoother);
 
                 number baseLevel = json_default_preconds["gmg"]["baseLevel"];
-                if (desc["gmg"].contains("baseLevel"))
-                {
+                if (desc["gmg"].contains("baseLevel")){
                     baseLevel = desc["gmg"]["baseLevel"];
                 }
                 UG_LOG("base_level found!\n");
                 GMG->set_base_level(baseLevel);
 
                 std::string cycleType = json_default_preconds["gmg"]["cycle"];
-                if (desc["gmg"].contains("cycle"))
-                {
+                if (desc["gmg"].contains("cycle")){
                     cycleType = desc["gmg"]["cycle"];
                 }
                 UG_LOG("CycleType found!\n");
                 GMG->set_cycle_type(cycleType);
 
                 // Not so sure if it should contain the actual parameter
-                if (solverutil.hasComponent("discretization"))
-                {
-                    SmartPtr<IAssemble<TAlgebra>> discretization = std::get<SmartPtr<IAssemble<TAlgebra>>>(solverutil.getComponent("discretization"));
+                if (solverutil.hasComponent("discretization")){
+                    SmartPtr<IAssemble<TAlgebra>> discretization = std::get<SmartPtr<IAssemble<TAlgebra>>>(
+                        solverutil.getComponent("discretization"));
                     UG_LOG("Discretization found!\n");
                     GMG->set_discretization(discretization);
                 }
                 number preSmooth = json_default_preconds["gmg"]["preSmooth"];
-                if (desc["gmg"].contains("preSmooth"))
-                {
+                if (desc["gmg"].contains("preSmooth")){
                     preSmooth = desc["gmg"]["preSmooth"];
                 }
                 UG_LOG("presmooth found!\n");
                 GMG->set_num_presmooth(preSmooth);
 
                 number postSmooth = json_default_preconds["gmg"]["postSmooth"];
-                if (desc["gmg"].contains("postSmooth"))
-                {
+                if (desc["gmg"].contains("postSmooth")){
                     postSmooth = desc["gmg"]["postSmooth"];
                 }
                 UG_LOG("postsmooth found!\n");
                 GMG->set_num_postsmooth(postSmooth);
 
                 bool rap = json_default_preconds["gmg"]["rap"];
-                if (desc["gmg"].contains("rap"))
-                {
+                if (desc["gmg"].contains("rap")){
                     rap = desc["gmg"]["rap"];
                 }
                 UG_LOG("rap found!\n");
                 GMG->set_rap(rap);
 
                 bool rim = json_default_preconds["gmg"]["rim"];
-                if (desc["gmg"].contains("rim"))
-                {
+                if (desc["gmg"].contains("rim")){
                     rim = desc["gmg"]["rim"];
                 }
                 UG_LOG("smooth_on_surface_rim found!\n");
                 GMG->set_smooth_on_surface_rim(rim);
 
                 bool emulateFullRefined = json_default_preconds["gmg"]["emulateFullRefined"];
-                if (desc["gmg"].contains("emulateFullRefined"))
-                {
+                if (desc["gmg"].contains("emulateFullRefined")){
                     emulateFullRefined = desc["gmg"]["emulateFullRefined"];
                 }
                 UG_LOG("emulate_full_refined_grid found!\n");
@@ -924,8 +840,7 @@ namespace ug
                 std::cout << json_default_transfer.dump() << std::endl;
                 number restrictionDamp = json_default_transfer["restrictionDamp"];
                 UG_LOG("Defaultrestiction!\n");
-                if (desc["gmg"].contains("transfer") && desc["gmg"]["transfer"].contains("restrictionDamp"))
-                {
+                if (desc["gmg"].contains("transfer") && desc["gmg"]["transfer"].contains("restrictionDamp")){
                     restrictionDamp = desc["gmg"]["transfer"]["restrictionDamp"];
                     UG_LOG("restiction!\n");
                 }
@@ -933,16 +848,15 @@ namespace ug
                 TF->set_restriction_damping(restrictionDamp);
 
                 number prolongationDamp = json_default_transfer["prolongationDamp"];
-                if (desc["gmg"].contains("transfer") && desc["gmg"]["transfer"].contains("prolongationDamp"))
-                {
+                if (desc["gmg"].contains("transfer") && desc["gmg"]["transfer"].contains("prolongationDamp")){
                     prolongationDamp = desc["gmg"]["transfer"]["prolongationDamp"];
                 }
                 UG_LOG("prolongation!");
                 TF->set_prolongation_damping(prolongationDamp);
 
                 bool optimization = json_default_transfer["enableP1LagrangeOptimization"];
-                if (desc["gmg"].contains("transfer") && desc["gmg"]["transfer"].contains("enableP1LagrangeOptimization"))
-                {
+                if (desc["gmg"].contains("transfer") && desc["gmg"]["transfer"].
+                    contains("enableP1LagrangeOptimization")){
                     optimization = desc["gmg"]["transfer"]["enableP1LagrangeOptimization"];
                 }
                 UG_LOG("lagrange_opt!");
@@ -951,15 +865,13 @@ namespace ug
                 // TF->set_debug(TF, transferDesc, transferDefault, solverutil);
                 UG_LOG("transfer found!\n");
                 GMG->set_transfer(TF);
-
+                /*
                 // entweder mit boolean Objekt bauen oder direkt Objekt abfragen
 
                 SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> debugDesc;
-                if (desc["gmg"].contains("debug"))
-                {
+                if (desc["gmg"].contains("debug")){
                     bool debug = desc["gmg"]["debug"];
-                    if (debug)
-                    {
+                    if (debug){
                         bool vtk = true;
                         bool conn_viewer = false;
                         typedef SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> TDW;
@@ -970,16 +882,15 @@ namespace ug
                     }
                 }
 
-                if (solverutil.hasComponent("Debugger") and !desc["gmg"].contains("debug"))
-                {
+                if (solverutil.hasComponent("Debugger") and !desc["gmg"].contains("debug")){
                     debugDesc = SetDebugger(desc, solverutil);
                     GMG->set_debug(debugDesc);
                 }
+                */
 
                 bool gatheredBaseSolverIfAmbiguous = json_default_preconds["gmg"]["gatheredBaseSolverIfAmbiguous"];
                 UG_LOG("gatheredBaseSolverIfAMb found!\n")
-                if (desc["gmg"].contains("gatheredBaseSolverIfAmbiguous"))
-                {
+                if (desc["gmg"].contains("gatheredBaseSolverIfAmbiguous")){
                     gatheredBaseSolverIfAmbiguous = desc["gmg"]["gatheredBaseSolverIfAmbiguous"];
                 }
                 GMG->set_gathered_base_solver_if_ambiguous(gatheredBaseSolverIfAmbiguous);
@@ -990,37 +901,31 @@ namespace ug
                 SmartPtr<MGS> MGSD = make_sp(new MGS());
 
                 std::string prefix = json_default_mgStats["filenamePrefix"];
-                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("filenamePrefix"))
-                {
+                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("filenamePrefix")){
                     prefix = desc["gmg"]["mgStats"]["standard"]["filenamePrefix"];
                 }
                 MGSD->set_filename_prefix(prefix.c_str());
 
                 bool exitError = json_default_mgStats["exitOnError"];
-                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("exitOnError"))
-                {
+                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("exitOnError")){
                     exitError = desc["gmg"]["mgStats"]["standard"]["exitOnError"];
                 }
                 MGSD->set_exit_on_error(exitError);
 
                 bool errorVec = json_default_mgStats["writeErrVecs"];
-                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("writeErrVecs"))
-                {
+                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("writeErrVecs")){
                     errorVec = desc["gmg"]["mgStats"]["standard"]["writeErrVecs"];
                 }
                 MGSD->set_write_err_vecs(errorVec);
 
                 bool errorDiff = json_default_mgStats["writeErrDiffs"];
-                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("writeErrDiffs"))
-                {
+                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("writeErrDiffs")){
                     errorDiff = desc["gmg"]["mgStats"]["standard"]["writeErrDiffs"];
                 }
                 MGSD->set_write_err_diffs(errorDiff);
-                if (!json_default_mgStats["activeStages"].is_null())
-                {
+                if (!json_default_mgStats["activeStages"].is_null()){
                     std::vector<int> activeStage = json_default_mgStats["activeStages"].get<std::vector<int>>();
-                    if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("activeStages"))
-                    {
+                    if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("activeStages")){
                         activeStage = desc["gmg"]["mgStats"]["standard"]["activeStages"].get<std::vector<int>>();
                     }
                     MGSD->set_active_stages(activeStage);
@@ -1029,8 +934,7 @@ namespace ug
 
                 preconditioner = GMG.template cast_static<TPrecond>();
             }
-            else if (type == "schur")
-            {
+            else if (type == "schur"){
                 // TODO:Duy create schur
             }
 
@@ -1038,34 +942,33 @@ namespace ug
             return preconditioner;
         }
 
-        template <typename TDomain, typename TAlgebra>
-        void PrepareSolverUtil(nlohmann::json &desc, nlohmann::json &solverutil)
-        {
-
+        template<typename TDomain, typename TAlgebra>
+        void PrepareSolverUtil(nlohmann::json &desc, nlohmann::json &solverutil){
             typedef SolverUtil<TDomain, TAlgebra> TSolverUtil;
             // Create SolverUtil container class
             SmartPtr<TSolverUtil> solv_util = make_sp(new TSolverUtil());
 
-            if (solverutil.contains("ApproxSpace"))
-            {
+            if (solverutil.contains("ApproxSpace")){
                 solv_util->setComponent("ApproxSpace", solverutil["ApproxSpace"]);
             }
         }
+
         /*
         Set Debugger for different preconditioners and solvers
 
         parameters nlohmann::json &desc
         parameters SolverUtil<TDomain, TAlgebra> &solverutil
         return GridFunctionDebugWriter<TDomain, TAlgebra>
-        */
 
-        template <typename TDomain, typename TAlgebra>
-        SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> SetDebugger(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil)
-        {
+        template<typename TDomain, typename TAlgebra>
+        SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> SetDebugger(
+            nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
             SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> debugger;
-            debugger = std::get<SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>>>(solverutil.getComponent("debugger"));
+            debugger = std::get<SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>>>(
+                solverutil.getComponent("debugger"));
             return debugger;
         }
+        */
 
         /*
          * Helper class to provide c++ util functions in lua.
@@ -1077,43 +980,38 @@ namespace ug
          * the correct templated util functions!
          */
 
-        template <typename TDomain, typename TAlgebra>
-        class SolverUtilFunctionProvider
-        {
+        template<typename TDomain, typename TAlgebra>
+        class SolverUtilFunctionProvider{
         public:
             typedef typename TAlgebra::vector_type vector_type;
             typedef typename TAlgebra::matrix_type matrix_type;
             const static int dim = TDomain::dim;
 
-            SolverUtilFunctionProvider() {};
+            SolverUtilFunctionProvider(){
+            };
 
             SmartPtr<ILinearIterator<typename TAlgebra::vector_type>>
-            GetCreatePreconditioner(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil)
-            {
+            GetCreatePreconditioner(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
                 return CreatePreconditioner<TDomain, TAlgebra>(desc, solverutil);
             }
 
             SmartPtr<ILinearIterator<typename TAlgebra::vector_type>>
-            GetCreateLinearSolver(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil)
-            {
+            GetCreateLinearSolver(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
                 return CreateLinearSolver<TDomain, TAlgebra>(desc, solverutil);
             }
 
             SmartPtr<NewtonSolver<TAlgebra>>
-            GetCreateNewtonSolver(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil)
-            {
+            GetCreateNewtonSolver(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
                 return CreateNewtonSolver<TDomain, TAlgebra>(desc, solverutil);
             }
 
             SmartPtr<StandardLineSearch<vector_type>>
-            GetCreateLineSearch(nlohmann::json &desc)
-            {
+            GetCreateLineSearch(nlohmann::json &desc){
                 return CreateLineSearch<TAlgebra>(desc);
             }
 
             SmartPtr<StdConvCheck<vector_type>>
-            GetCreateConvCheck(nlohmann::json &desc)
-            {
+            GetCreateConvCheck(nlohmann::json &desc){
                 return CreateConvCheck<TAlgebra>(desc);
             }
         };
