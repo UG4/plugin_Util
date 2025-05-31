@@ -47,6 +47,7 @@
 #include "lib_algebra/operator/linear_solver/agglomerating_solver.h"
 #include "lib_algebra/operator/linear_solver/lu.h"
 #include "../SuperLU6/super_lu.h"
+#include "lib_disc/operator/linear_operator/subspace_correction/sequential_subspace_correction.h"
 #include "lib_disc/spatial_disc/domain_disc.h"
 
 namespace ug
@@ -439,8 +440,9 @@ namespace ug
                 }
                 UG_LOG("CreateLinearSolver, precondDesc: \n");
                 UG_LOG(precondDesc.dump(4) << "\n");
-                SmartPtr<ILinearIterator<typename TAlgebra::vector_type>> preconditioner = CreatePreconditioner(
-                    precondDesc, solverutil);
+
+                SmartPtr<ILinearIterator<typename TAlgebra::vector_type>>
+                preconditioner = CreatePreconditioner(precondDesc, solverutil);
                 (linSolver.template cast_dynamic<IPreconditionedLinearOperatorInverse<typename TAlgebra::vector_type>>())->set_preconditioner(preconditioner);
             }
 
@@ -513,7 +515,6 @@ namespace ug
                     else if (json_default_nonlinearSolver["newton"]["linSolver"].is_object()){
                         linSolverDesc = json_default_nonlinearSolver["newton"]["linSolver"];
                     }
-
                 }
                 UG_LOG("CreateNewtonSolver, linSolverDesc:\n");
                 UG_LOG(linSolverDesc.dump(4) << "\n");
@@ -523,20 +524,19 @@ namespace ug
                 newtonSolver->set_linear_solver(linSolver);
 
                 // convergence check
-                UG_LOG("ConvergenceCheck, defaults:\n");
                 std::string convCheckType = json_default_nonlinearSolver["newton"]["convCheck"];
                 nlohmann::json convCheckDesc;
-                UG_LOG("default convCheckType: ");
-                UG_LOG(convCheckType);
+                UG_LOG("convCheck json default: ");
+                UG_LOG(convCheckType << "\n");
                 // get descriptor for convergence check
                 if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_string()){
-                    UG_LOG("\n convCheck is string: ");
+                    UG_LOG("convCheckDesc is string: ");
                     convCheckType = solverDesc["convCheck"];
-                    UG_LOG(convCheckType << "\n")
+                    UG_LOG(convCheckType << "\n");
                     convCheckDesc["type"] = convCheckType;
                 }
                 else if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_object()){
-                    UG_LOG("convCheck is object: ");
+                    UG_LOG("convCheckDesc is object: ");
                     convCheckDesc = solverDesc["convCheck"];
                     UG_LOG(convCheckDesc.dump(4) << "\n");
                 }
@@ -581,7 +581,7 @@ namespace ug
                     newtonSolver->set_reassemble_J_freq(solverDesc["reassemble_J_freq"]);
                 }
 
-                // TODO: SetDebugWriter(newtonSolver, solverDesc, defaults, solverutil);
+                // SetDebugWriter(newtonSolver, solverDesc, defaults, solverutil);
                 return newtonSolver;
             }
             UG_THROW("CreateNewtonSolver: Only 'newton' solver type is supported in this function.")
@@ -778,9 +778,6 @@ namespace ug
                     relax = desc["relax"];
                 }
 
-                // UG_LOG("json_default_preconds: " << json_default_preconds.dump(4) << "\n");
-                // UG_LOG("desc: " << desc.dump(4) << "\n");
-
                 SmartPtr<TCGS> CGS = make_sp(new TCGS(relax, vFullRowCmp));
 
                 number alpha = 1.0;
@@ -816,7 +813,27 @@ namespace ug
                 preconditioner = CGS.template cast_static<TPrecond>();
             }
             else if (type == "ssc"){
-                // TODO:Duy create ssc
+                UG_LOG("CreatePreconditioner SequentialSubspaceCorrection \n")
+                typedef SequentialSubspaceCorrection<TDomain, TAlgebra> TSSC;
+                number relax = 1.0;
+                if (json_default_preconds.contains("ssc") && json_default_preconds["ssc"].contains("relax")){
+                    relax = json_default_preconds["ssc"]["relax"];
+                }
+                if (desc.contains("relax")){
+                    relax = desc["relax"];
+                }
+                SmartPtr<TSSC> SSC = make_sp(new TSSC(relax));
+
+                typedef VertexCenteredVankaSubspace<TDomain, TAlgebra> TVCVS;
+                std::vector<std::string> vVtxCmp;  // primary (vertex) components
+                std::vector<std::string> vElemCmp; // secondary (element) components
+
+                // TODO: primary = desc.vertex[1] secondary = desc.vertex[2]
+
+		SmartPtr<TVCVS> vertex_vanka = make_sp(new TVCVS(vVtxCmp, vElemCmp));
+                SSC->set_vertex_subspace(vertex_vanka);
+
+                preconditioner = SSC.template cast_static<TPrecond>();
             }
             else if (type == "gmg"){
                 UG_LOG("CreatePreconditioner Geometric MultiGrid (GMG)\n");
