@@ -243,13 +243,10 @@ namespace ug
 
         template<typename TDomain, typename TAlgebra>
         SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>>
-        //SmartPtr<ILinearIterator<typename TAlgebra::vector_type>>
         CreateLinearSolver(nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra> &solverutil){
             typedef typename TAlgebra::vector_type TVector;
             typedef LinearSolver<TVector> TLinSolv;
-            //typedef ILinearOperatorInverse<TVector> TLinSolv;
             typedef ILinearOperatorInverse<TVector> TReturn;
-            //SmartPtr<TLinSolv> linSolver;
             SmartPtr<TReturn> linSolver;
             // load defaults
             nlohmann::json json_default_linearSolver = json_predefined_defaults::solvers["linearSolver"];
@@ -260,25 +257,12 @@ namespace ug
             bool createPrecond = false;
             bool createConvCheck = false;
 
-            //if no descriptor given, create default linear solver
-            // if (!solverDesc.contains("linearSolver")){
-            // if (!solverDesc.contains("linearSolver")){
-            //    UG_LOG("default LinearSolver\n")
-            //    SmartPtr<ILU<TAlgebra>> ilu = make_sp<ILU<TAlgebra>>(new ILU<TAlgebra>());
-            //    SmartPtr<StdConvCheck<TVector>> convCheck = make_sp<StdConvCheck<TVector>>(
-            //        new StdConvCheck<TVector>(100, 1e-9, 1e-12));
-            //    SmartPtr<TLinSolv> default_linear_solver = make_sp(new TLinSolv());
-            //    default_linear_solver->set_convergence_check(convCheck);
-            //    default_linear_solver->set_preconditioner(ilu);
-            //    return default_linear_solver;
-            //}
-
-            std::string type = "linear";
+            std::string type;
             if (solverDesc.contains("type")){
                 type = solverDesc["type"];
             }
             if (type == "linear"){
-                UG_LOG("type solver is linear\n")
+                UG_LOG("type solver is linear\n");
                 // create linear
                 auto linear = make_sp(new TLinSolv());
                 linSolver = linear.template cast_dynamic<TReturn>();
@@ -290,7 +274,7 @@ namespace ug
                 createConvCheck = true;
             }
             else if (type == "cg"){
-                UG_LOG("type solver is cg\n")
+                UG_LOG("type solver is cg\n");
                 // create CGSolver
                 typedef CG<TVector> TCGSolver;
                 SmartPtr<TCGSolver> CG = make_sp(new TCGSolver());
@@ -298,12 +282,16 @@ namespace ug
                 linSolver = CG.template cast_dynamic<TReturn>();
                 // configure cg
                 precondtype = json_default_linearSolver["cg"]["precond"];
+                UG_LOG("precondtype of cg: ");
+                UG_LOG(precondtype << "\n");
                 convChecktype = json_default_linearSolver["cg"]["convCheck"];
+                UG_LOG("convChecktype of cg: ");
+                UG_LOG(convChecktype << "\n");
                 createPrecond = true;
                 createConvCheck = true;
             }
             else if (type == "bicgstab"){
-                UG_LOG("type solver is bicgstab\n")
+                UG_LOG("type solver is bicgstab\n");
                 // create BiCGStabSolver
                 typedef BiCGStab<TVector> TBiCGStabSolver;
                 SmartPtr<TBiCGStabSolver> BICGSTAB = make_sp(new TBiCGStabSolver());
@@ -311,12 +299,16 @@ namespace ug
                 linSolver = BICGSTAB.template cast_dynamic<TReturn>();
                 // configure bicgstab
                 precondtype = json_default_linearSolver["bicgstab"]["precond"];
+                UG_LOG("precondtype of bicgstab: ");
+                UG_LOG(precondtype << "\n");
                 convChecktype = json_default_linearSolver["bicgstab"]["convCheck"];
+                UG_LOG("convChecktype of bicgstab: ");
+                UG_LOG(convChecktype << "\n");
                 createPrecond = true;
                 createConvCheck = true;
             }
             else if (type == "gmres"){
-                UG_LOG("type solver is gmres\n")
+                UG_LOG("type solver is gmres\n");
                 // create gmres
                 typedef GMRES<TVector> TGMRESSolver;
                 SmartPtr<TGMRESSolver> GMRES;
@@ -335,7 +327,7 @@ namespace ug
                 createConvCheck = true;
             }
             else if (type == "lu"){
-                UG_LOG("CreateLinearSolver, type solver is lu \n")
+                UG_LOG("CreateLinearSolver, type solver is lu \n");
                 // AgglomeratingSolver
 
             #ifdef UG_USE_SUPERLU
@@ -347,7 +339,7 @@ namespace ug
                 linSolver = SuperLU.template cast_dynamic<TReturn>();
 
             #else
-                UG_LOG("CreateLinearSolver,name_lu, AgglomeratingSolver(LU_solver) \n")
+                UG_LOG("CreateLinearSolver,name_lu, AgglomeratingSolver(LU_solver) \n");
                 typedef LU<TAlgebra> TLU;
                 SmartPtr<TLU> LU_solver = make_sp(new TLU());
 
@@ -368,7 +360,7 @@ namespace ug
             #endif
             }
             else if (type == "uglu"){
-                UG_LOG("CreateLinearSolver,name_uglu, AgglomeratingSolver(LU_solver) \n")
+                UG_LOG("CreateLinearSolver,name_uglu, AgglomeratingSolver(LU_solver) \n");
                 // create LU Solver
                 typedef LU<TAlgebra> TLU;
                 SmartPtr<TLU> LU_solver = make_sp(new TLU());
@@ -389,7 +381,7 @@ namespace ug
                 linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver)).template cast_dynamic<TReturn>();
             }
             else if (type == "superlu"){
-                UG_LOG("CreateLinearSolver,name_superlu, AgglomeratingSolver(SuperLU()) \n")
+                UG_LOG("CreateLinearSolver,name_superlu, AgglomeratingSolver(SuperLU()) \n");
                 // create SuperLU Solver
                 typedef SuperLUSolver<TAlgebra> TSupLUSolv;
                 SmartPtr<TSupLUSolv> superlu = make_sp(new TSupLUSolv());
@@ -407,7 +399,17 @@ namespace ug
                 SmartPtr<TAggSolver> superLU = make_sp(new TAggSolver(linOpInverse));
                 linSolver = superLU.template cast_dynamic<TReturn>();
             }
-            
+            else {
+                UG_LOG("*** no descriptor is given, create default linear solver *** \n");
+                SmartPtr<ILU<TAlgebra>> ilu = make_sp<ILU<TAlgebra>>(new ILU<TAlgebra>());
+                SmartPtr<StdConvCheck<TVector>> convCheck = make_sp<StdConvCheck<TVector>>(
+                    new StdConvCheck<TVector>(100, 1e-9, 1e-12));
+                SmartPtr<TLinSolv> default_linear_solver = make_sp(new TLinSolv());
+                default_linear_solver->set_convergence_check(convCheck);
+                default_linear_solver->set_preconditioner(ilu);
+                return default_linear_solver;
+            }
+
             // Checks for a valid solver
             CondAbort(linSolver.invalid(), "Invalid linear solver specified: " + type);
 
@@ -425,18 +427,18 @@ namespace ug
                 nlohmann::json precondDesc;
 
                 if (solverDesc.contains("precond") && solverDesc["precond"].is_object()){
-                    UG_LOG("CreateLinearSolver, solverDesc is object \n")
+                    UG_LOG("CreateLinearSolver, solverDesc is object \n");
                     precondDesc = solverDesc["precond"];
                 }
                 else if (solverDesc.contains("precond") && solverDesc["precond"].is_string()){
-                    UG_LOG("CreateLinearSolver, solverDesc is string \n")
+                    UG_LOG("CreateLinearSolver, solverDesc is string \n");
                     precondDesc["type"] = precondtype;
                 }
                 else{
-                    UG_LOG(">> CreateLinearSolver, solverDesc must be a string or an object \n")
+                    UG_LOG(">> CreateLinearSolver, solverDesc must be a string or an object \n");
                 }
-                UG_LOG("CreateLinearSolver, precondDesc: \n")
-                UG_LOG(precondDesc.dump(4) << "\n")
+                UG_LOG("CreateLinearSolver, precondDesc: \n");
+                UG_LOG(precondDesc.dump(4) << "\n");
                 SmartPtr<ILinearIterator<typename TAlgebra::vector_type>> preconditioner = CreatePreconditioner(
                     precondDesc, solverutil);
                 (linSolver.template cast_dynamic<IPreconditionedLinearOperatorInverse<typename TAlgebra::vector_type>>())->set_preconditioner(preconditioner);
@@ -447,32 +449,32 @@ namespace ug
                 nlohmann::json convCheckDesc;
 
                 if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_object()){
-                    UG_LOG("CreateLinearSolver, convCheckDesc is object \n")
+                    UG_LOG("CreateLinearSolver, convCheckDesc is object \n");
                     convCheckDesc = solverDesc["convCheck"];
                 }
                 else if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_string()){
-                    UG_LOG("CreateLinearSolver, convCheckDesc is string \n")
+                    UG_LOG("CreateLinearSolver, convCheckDesc is string \n");
                     convCheckDesc["type"] = convChecktype;
                 }
                 else{
-                    UG_LOG(">> CreateLinearSolver, convCheckDesc must be a string or an object \n")
+                    UG_LOG(">> CreateLinearSolver, convCheckDesc must be a string or an object \n");
                 }
-                UG_LOG("CreateLinearSolver, convCheckDesc: \n")
-                UG_LOG(convCheckDesc.dump(4) << "\n")
+                UG_LOG("CreateLinearSolver, convCheckDesc: \n");
+                UG_LOG(convCheckDesc.dump(4) << "\n");
                 SmartPtr<StdConvCheck<TVector>> convCheck = CreateConvCheck<TAlgebra>(convCheckDesc);
                 linSolver->set_convergence_check(convCheck);
             }
 
             // TODO: SetDebugWriter(linSolver, solverDesc, defaults, solverutil)
 
-            return linSolver; //.template cast_dynamic<TReturn>();
+            return linSolver;
         }
 
 
         template<typename TDomain, typename TAlgebra>
         SmartPtr<NewtonSolver<TAlgebra>>
         CreateNewtonSolver(nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra> &solverutil){
-            UG_LOG("Creating NewtonSolver\n")
+            UG_LOG("Creating NewtonSolver\n");
             std::cout << "[DEBUG] JSON input to CreateNewtonSolver:\n" << solverDesc.dump(4) << std::endl;
             nlohmann::json json_default_nonlinearSolver = json_predefined_defaults::solvers["nonlinearSolver"];
 
@@ -482,7 +484,7 @@ namespace ug
                 type = solverDesc["type"];
             }
             if (type == "newton"){
-                UG_LOG("CreateNewtonSolver, type solver is newton \n")
+                UG_LOG("CreateNewtonSolver, type solver is newton \n");
 
                 auto newtonSolver = make_sp(new NewtonSolver<TAlgebra>());
 
@@ -493,7 +495,6 @@ namespace ug
                 if (solverDesc.contains("linSolver")){
                     if (solverDesc["linSolver"].is_string()){
                         UG_LOG("CreateNewtonSolver, linSolver is a string: \n");
-                        // linSolverType = solverDesc["linSolver"];
                         linSolverDesc["type"] = solverDesc["linSolver"];
                     }
                     else if (solverDesc["linSolver"].is_object()){
@@ -512,6 +513,7 @@ namespace ug
                     else if (json_default_nonlinearSolver["newton"]["linSolver"].is_object()){
                         linSolverDesc = json_default_nonlinearSolver["newton"]["linSolver"];
                     }
+
                 }
                 UG_LOG("CreateNewtonSolver, linSolverDesc:\n");
                 UG_LOG(linSolverDesc.dump(4) << "\n");
@@ -521,55 +523,53 @@ namespace ug
                 newtonSolver->set_linear_solver(linSolver);
 
                 // convergence check
+                UG_LOG("ConvergenceCheck, defaults:\n");
                 std::string convCheckType = json_default_nonlinearSolver["newton"]["convCheck"];
                 nlohmann::json convCheckDesc;
+                UG_LOG("default convCheckType: ");
                 UG_LOG(convCheckType);
                 // get descriptor for convergence check
                 if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_string()){
-                    UG_LOG("zeile 517:convCheck is string \n");
+                    UG_LOG("\n convCheck is string: ");
                     convCheckType = solverDesc["convCheck"];
-                    UG_LOG("zeile 519:\n");
+                    UG_LOG(convCheckType << "\n")
                     convCheckDesc["type"] = convCheckType;
-                    UG_LOG("zeile 521:\n");
                 }
                 else if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_object()){
-                    UG_LOG("zeile 524:convCheck is object \n");
+                    UG_LOG("convCheck is object: ");
                     convCheckDesc = solverDesc["convCheck"];
-                    UG_LOG("zeile 526:\n");
+                    UG_LOG(convCheckDesc.dump(4) << "\n");
                 }
                 else{
                     UG_LOG(">> CreateNewtonSolver, convCheckDesc must be a string or an object \n")
                 }
-
+                
                 SmartPtr<StdConvCheck<typename TAlgebra::vector_type>> convCheck;
-                UG_LOG("zeile 533:\n");
                 convCheck = CreateConvCheck<TAlgebra>(convCheckDesc);
                 newtonSolver->set_convergence_check(convCheck);
 
                 // line search
                 std::string lineSearchType = "standard";
                 nlohmann::json lineSearchDesc;
-                UG_LOG("zeile 521:\n");
                 if (json_default_nonlinearSolver["newton"]["lineSearch"].is_string()){
                     lineSearchType = json_default_nonlinearSolver["newton"]["lineSearch"];
                 }
                 // get descriptor for line search
                 if (solverDesc.contains("lineSearch") && solverDesc["lineSearch"].is_string()){
-                    UG_LOG("zeile 549:lineSearch is string \n");
+                    UG_LOG("lineSearch is string: ");
                     lineSearchType = solverDesc["lineSearch"];
-                    UG_LOG("zeile 551:\n");
+                    UG_LOG(lineSearchType << "\n");
                     lineSearchDesc["type"] = lineSearchType;
-                    UG_LOG("zeile 553:\n");
                 }
                 else if (solverDesc.contains("lineSearch") && solverDesc["lineSearch"].is_object()){
-                    UG_LOG("zeile 556:lineSearch is object \n");
+                    UG_LOG("lineSearch is object: ");
                     lineSearchDesc = solverDesc["lineSearch"];
-                    UG_LOG("zeile 558:\n");
+                    UG_LOG(lineSearchDesc.dump(4) << "\n");
                 }
                 else{
                     UG_LOG(">> CreateNewtonSolver, lineSearchDesc must be a string or an object \n")
                 }
-
+                
                 // if line_Search not null
                 if (!lineSearchType.empty() && lineSearchType != "none"){
                     SmartPtr<StandardLineSearch<typename TAlgebra::vector_type>> lineSearch;
@@ -582,13 +582,13 @@ namespace ug
                 }
 
                 // TODO: SetDebugWriter(newtonSolver, solverDesc, defaults, solverutil);
-
                 return newtonSolver;
             }
             UG_THROW("CreateNewtonSolver: Only 'newton' solver type is supported in this function.")
         }
 
-        template <typename TDomain, typename TAlgebra>
+
+        template<typename TDomain, typename TAlgebra>
         SmartPtr<ILinearIterator<typename TAlgebra::vector_type>>
         CreatePreconditioner(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
             typedef typename TAlgebra::vector_type TVector;
