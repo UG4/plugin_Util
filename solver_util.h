@@ -36,9 +36,12 @@
 #include "lib_algebra/operator/preconditioner/jacobi.h"
 #include "lib_algebra/operator/preconditioner/block_gauss_seidel.h"
 #include "lib_algebra/operator/preconditioner/gauss_seidel.h"
+#include "lib_algebra/operator/preconditioner/schur/schur_complement_inverse.h"
+#include "lib_algebra/operator/preconditioner/schur/schur_precond.h"
 #include "lib_disc/operator/linear_operator/element_gauss_seidel/element_gauss_seidel.h"
 #include "lib_disc/operator/linear_operator/element_gauss_seidel/component_gauss_seidel.h"
 #include "lib_disc/operator/linear_operator/multi_grid_solver/mg_solver.h"
+#include "lib_disc/operator/linear_operator/subspace_correction/sequential_subspace_correction.h"
 #include "lib_disc/operator/non_linear_operator/newton_solver/newton.h"
 #include "lib_disc/operator/non_linear_operator/line_search.h"
 #include "lib_algebra/operator/linear_solver/cg.h"
@@ -440,8 +443,8 @@ namespace ug
                 }
                 UG_LOG("CreateLinearSolver, precondDesc: \n");
                 UG_LOG(precondDesc.dump(4) << "\n");
-
-                SmartPtr<ILinearIterator<typename TAlgebra::vector_type>>
+                
+                SmartPtr<ILinearIterator<typename TAlgebra::vector_type>> 
                 preconditioner = CreatePreconditioner(precondDesc, solverutil);
                 (linSolver.template cast_dynamic<IPreconditionedLinearOperatorInverse<typename TAlgebra::vector_type>>())->set_preconditioner(preconditioner);
             }
@@ -829,10 +832,10 @@ namespace ug
                 std::vector<std::string> vElemCmp; // secondary (element) components
 
                 // TODO: primary = desc.vertex[1] secondary = desc.vertex[2]
-
-		SmartPtr<TVCVS> vertex_vanka = make_sp(new TVCVS(vVtxCmp, vElemCmp));
+                
+		        SmartPtr<TVCVS> vertex_vanka = make_sp(new TVCVS(vVtxCmp, vElemCmp));
                 SSC->set_vertex_subspace(vertex_vanka);
-
+                
                 preconditioner = SSC.template cast_static<TPrecond>();
             }
             else if (type == "gmg"){
@@ -961,7 +964,7 @@ namespace ug
                 // TF->set_debug(TF, transferDesc, transferDefault, solverutil);
                 UG_LOG("transfer found!\n");
                 GMG->set_transfer(TF);
-
+                
                 // entweder mit boolean Objekt bauen oder direkt Objekt abfragen
 
                 SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> debugDesc;
@@ -1030,7 +1033,57 @@ namespace ug
                 preconditioner = GMG.template cast_static<TPrecond>();
             }
             else if (type == "schur"){
-                // TODO:Duy create schur
+                UG_LOG("CreatePreconditioner SchurComplement \n")
+                typedef SchurPrecond<TAlgebra> Tschur;
+                SmartPtr<Tschur> SCHUR = make_sp(new Tschur());
+
+                // load defaults
+                nlohmann::json json_default_preconds = json_predefined_defaults::solvers["preconditioner"];
+
+                std::string dirichletSolverType = json_default_preconds["schur"]["dirichletSolver"];
+                std::string skeletonSolverType = json_default_preconds["schur"]["skeletonSolver"];
+
+                nlohmann::json dirichletSolverDesc;
+                nlohmann::json skeletonSolverDesc;
+
+                dirichletSolverDesc["type"] = dirichletSolverType;
+                skeletonSolverDesc["type"] = skeletonSolverType;
+
+                if (desc.contains("dirichletSolver")){
+                    if (desc["dirichletSolver"].is_string()){
+                        dirichletSolverDesc["type"] = desc["dirichletSolver"];
+                        //dirichletSolverType = dirichletSolverDesc["type"];
+                    }
+                    else if (desc["dirichletSolver"].is_object()){
+                        dirichletSolverDesc = desc["dirichletSolver"];
+                    }
+                    else{
+                        UG_LOG("DirichletSolver is not a string or an object, loading json default \n")
+                    }
+                }
+                if (desc.contains("skeletonSolver")){
+                    if (desc["skeletonSolver"].is_string()){
+                        skeletonSolverDesc["type"] = desc["skeletonSolver"];
+                        //skeletonSolverType = skeletonSolverDesc["type"];
+                    }
+                    else if (desc["skeletonSolver"].is_object()){
+                        skeletonSolverDesc = desc["skeletonSolver"];
+                    }
+                    else{
+                        UG_LOG("SkeletonSolver is not a string or an object, loading json default \n")
+                    }
+                }
+                typedef typename TAlgebra::vector_type TVector;
+
+                SmartPtr<ILinearOperatorInverse<TVector>> dirichletSolver = CreateLinearSolver(dirichletSolverDesc, solverutil);
+                SmartPtr<ILinearOperatorInverse<TVector, TVector>> skeletonSolver = CreateLinearSolver(skeletonSolverDesc, solverutil);
+
+                SCHUR->set_dirichlet_solver(dirichletSolver);
+                SmartPtr<ISchurComplementInverse<TAlgebra>> schurInv =
+    make_sp(new SchurInverseWithFullMatrix<TAlgebra>(skeletonSolver));
+                SCHUR->set_skeleton_solver(schurInv);
+
+                preconditioner = SCHUR.template cast_static<TPrecond>();
             }
 
             // return Preconditioner
