@@ -52,11 +52,19 @@ local gmgDesc =
 
 local cgsDesc = {
 	type = "cgs",
-	alpha = 1.0,
-	beta = 1.0,
+	alpha = 1.1,
+	beta = 1.2,
 	weights = false,
-	relax = 1.0	
+	relax = 1.3	
 }
+
+local schurDesc = {
+	type = "schur",
+	dirichletSolver	= "lu",
+	skeletonSolver	= "lu"	
+}
+
+
 approxSpace:print_statistic()
 print(type(gmgDesc["approxSpace"]))
 print(require("json").encode(gmgDesc))
@@ -83,6 +91,8 @@ local precond = util.test.CreatePreconditioner(cgsDesc, solverutil)
 print("cgs: "..precond:config_string())
 local precond = util.test.CreatePreconditioner(gmgDesc,solverutil)
 print("gmg: "..precond:config_string())
+local precond = util.test.CreatePreconditioner(schurDesc,solverutil)
+print("schur: "..precond:config_string())
 local lineSearchDesc = {
                        	type			= "standard",
                        	maxSteps		= 5,
