@@ -50,15 +50,18 @@ local gmgDesc =
     mgStats = null
 }
 
-local cgsDesc = {
+local cgsDesc ={
 	type = "cgs",
-	alpha = 1.1,
-	beta = 1.2,
+	alpha = 1.0,
+	beta = 1.0,
 	weights = false,
-	relax = 1.3	
+	relax = 1.0	
 }
-
-local schurDesc = {
+local sscDesc ={
+	type = "ssc",
+	relax = 1.0
+}
+local schurDesc ={
 	type = "schur",
 	dirichletSolver	= "lu",
 	skeletonSolver	= "lu"	
@@ -91,6 +94,8 @@ local precond = util.test.CreatePreconditioner(cgsDesc, solverutil)
 print("cgs: "..precond:config_string())
 local precond = util.test.CreatePreconditioner(gmgDesc,solverutil)
 print("gmg: "..precond:config_string())
+local precond = util.test.CreatePreconditioner(sscDesc,solverutil)
+print("ssc: "..precond:config_string())
 local precond = util.test.CreatePreconditioner(schurDesc,solverutil)
 print("schur: "..precond:config_string())
 local lineSearchDesc = {

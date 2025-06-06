@@ -282,15 +282,14 @@ namespace ug
                 // create CGSolver
                 typedef CG<TVector> TCGSolver;
                 SmartPtr<TCGSolver> CG = make_sp(new TCGSolver());
-                //linSolver = CG.template cast_dynamic<TLinSolv>();
                 linSolver = CG.template cast_dynamic<TReturn>();
                 // configure cg
                 precondtype = json_default_linearSolver["cg"]["precond"];
-                UG_LOG("precondtype of cg: ");
-                UG_LOG(precondtype << "\n");
+                //UG_LOG("precondtype of cg: ");
+                //UG_LOG(precondtype << "\n");
                 convChecktype = json_default_linearSolver["cg"]["convCheck"];
-                UG_LOG("convChecktype of cg: ");
-                UG_LOG(convChecktype << "\n");
+                //UG_LOG("convChecktype of cg: ");
+                //UG_LOG(convChecktype << "\n");
                 createPrecond = true;
                 createConvCheck = true;
             }
@@ -299,15 +298,14 @@ namespace ug
                 // create BiCGStabSolver
                 typedef BiCGStab<TVector> TBiCGStabSolver;
                 SmartPtr<TBiCGStabSolver> BICGSTAB = make_sp(new TBiCGStabSolver());
-                //linSolver = BICGSTAB.template cast_dynamic<TLinSolv>();
                 linSolver = BICGSTAB.template cast_dynamic<TReturn>();
                 // configure bicgstab
                 precondtype = json_default_linearSolver["bicgstab"]["precond"];
-                UG_LOG("precondtype of bicgstab: ");
-                UG_LOG(precondtype << "\n");
+                //UG_LOG("precondtype of bicgstab: ");
+                //UG_LOG(precondtype << "\n");
                 convChecktype = json_default_linearSolver["bicgstab"]["convCheck"];
-                UG_LOG("convChecktype of bicgstab: ");
-                UG_LOG(convChecktype << "\n");
+                //UG_LOG("convChecktype of bicgstab: ");
+                //UG_LOG(convChecktype << "\n");
                 createPrecond = true;
                 createConvCheck = true;
             }
@@ -325,7 +323,6 @@ namespace ug
                     restart = solverDesc["restart"];
                 }
                 GMRES = make_sp(new TGMRESSolver(restart));
-                //linSolver = GMRES.template cast_dynamic<TLinSolv>();
                 linSolver = GMRES.template cast_dynamic<TReturn>();
                 createPrecond = true;
                 createConvCheck = true;
@@ -337,8 +334,6 @@ namespace ug
             #ifdef UG_USE_SUPERLU
                 UG_LOG("CreateLinearSolver,name_lu, AgglomeratingSolver(SuperLU()) \n");
                 auto SuperLU = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new SuperLUSolver<TAlgebra>())));
-                //linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new SuperLUSolver<TAlgebra>())))
-                //           .template cast_dynamic<TLinSolv>();
                 auto test = SuperLU.template cast_dynamic<ILinearOperatorInverse<typename TAlgebra::vector_type>>();
                 linSolver = SuperLU.template cast_dynamic<TReturn>();
 
@@ -405,6 +400,7 @@ namespace ug
             }
             else {
                 UG_LOG("*** no descriptor is given, create default linear solver *** \n");
+
                 SmartPtr<ILU<TAlgebra>> ilu = make_sp<ILU<TAlgebra>>(new ILU<TAlgebra>());
                 SmartPtr<StdConvCheck<TVector>> convCheck = make_sp<StdConvCheck<TVector>>(
                     new StdConvCheck<TVector>(100, 1e-9, 1e-12));
@@ -431,18 +427,18 @@ namespace ug
                 nlohmann::json precondDesc;
 
                 if (solverDesc.contains("precond") && solverDesc["precond"].is_object()){
-                    UG_LOG("CreateLinearSolver, solverDesc is object \n");
+                    //UG_LOG("CreateLinearSolver, solverDesc is object \n");
                     precondDesc = solverDesc["precond"];
                 }
                 else if (solverDesc.contains("precond") && solverDesc["precond"].is_string()){
-                    UG_LOG("CreateLinearSolver, solverDesc is string \n");
+                    //UG_LOG("CreateLinearSolver, solverDesc is string \n");
                     precondDesc["type"] = precondtype;
                 }
                 else{
                     UG_LOG(">> CreateLinearSolver, solverDesc must be a string or an object \n");
                 }
-                UG_LOG("CreateLinearSolver, precondDesc: \n");
-                UG_LOG(precondDesc.dump(4) << "\n");
+                //UG_LOG("CreateLinearSolver, precondDesc: \n");
+                //UG_LOG(precondDesc.dump(4) << "\n");
                 
                 SmartPtr<ILinearIterator<typename TAlgebra::vector_type>> 
                 preconditioner = CreatePreconditioner(precondDesc, solverutil);
@@ -454,18 +450,18 @@ namespace ug
                 nlohmann::json convCheckDesc;
 
                 if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_object()){
-                    UG_LOG("CreateLinearSolver, convCheckDesc is object \n");
+                    //UG_LOG("CreateLinearSolver, convCheckDesc is object \n");
                     convCheckDesc = solverDesc["convCheck"];
                 }
                 else if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_string()){
-                    UG_LOG("CreateLinearSolver, convCheckDesc is string \n");
+                    //UG_LOG("CreateLinearSolver, convCheckDesc is string \n");
                     convCheckDesc["type"] = convChecktype;
                 }
                 else{
                     UG_LOG(">> CreateLinearSolver, convCheckDesc must be a string or an object \n");
                 }
-                UG_LOG("CreateLinearSolver, convCheckDesc: \n");
-                UG_LOG(convCheckDesc.dump(4) << "\n");
+                //UG_LOG("CreateLinearSolver, convCheckDesc: \n");
+                //UG_LOG(convCheckDesc.dump(4) << "\n");
                 SmartPtr<StdConvCheck<TVector>> convCheck = CreateConvCheck<TAlgebra>(convCheckDesc);
                 linSolver->set_convergence_check(convCheck);
             }
@@ -499,11 +495,11 @@ namespace ug
                 // get descriptor for linear solver
                 if (solverDesc.contains("linSolver")){
                     if (solverDesc["linSolver"].is_string()){
-                        UG_LOG("CreateNewtonSolver, linSolver is a string: \n");
+                        //UG_LOG("CreateNewtonSolver, linSolver is a string: \n");
                         linSolverDesc["type"] = solverDesc["linSolver"];
                     }
                     else if (solverDesc["linSolver"].is_object()){
-                        UG_LOG("CreateNewtonSolver, linSolver is an object \n");
+                        //UG_LOG("CreateNewtonSolver, linSolver is an object \n");
                         linSolverDesc = solverDesc["linSolver"];
                     }
                     else{
@@ -519,8 +515,8 @@ namespace ug
                         linSolverDesc = json_default_nonlinearSolver["newton"]["linSolver"];
                     }
                 }
-                UG_LOG("CreateNewtonSolver, linSolverDesc:\n");
-                UG_LOG(linSolverDesc.dump(4) << "\n");
+                //UG_LOG("CreateNewtonSolver, linSolverDesc:\n");
+                //UG_LOG(linSolverDesc.dump(4) << "\n");
 
                 SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>> linSolver;
                 linSolver = CreateLinearSolver(linSolverDesc, solverutil);
@@ -529,19 +525,19 @@ namespace ug
                 // convergence check
                 std::string convCheckType = json_default_nonlinearSolver["newton"]["convCheck"];
                 nlohmann::json convCheckDesc;
-                UG_LOG("convCheck json default: ");
-                UG_LOG(convCheckType << "\n");
+                //UG_LOG("convCheck json default: ");
+                //UG_LOG(convCheckType << "\n");
                 // get descriptor for convergence check
                 if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_string()){
-                    UG_LOG("convCheckDesc is string: ");
+                    //UG_LOG("convCheckDesc is string: ");
                     convCheckType = solverDesc["convCheck"];
-                    UG_LOG(convCheckType << "\n");
+                    //UG_LOG(convCheckType << "\n");
                     convCheckDesc["type"] = convCheckType;
                 }
                 else if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_object()){
-                    UG_LOG("convCheckDesc is object: ");
+                    //UG_LOG("convCheckDesc is object: ");
                     convCheckDesc = solverDesc["convCheck"];
-                    UG_LOG(convCheckDesc.dump(4) << "\n");
+                    //UG_LOG(convCheckDesc.dump(4) << "\n");
                 }
                 else{
                     UG_LOG(">> CreateNewtonSolver, convCheckDesc must be a string or an object \n")
@@ -559,15 +555,15 @@ namespace ug
                 }
                 // get descriptor for line search
                 if (solverDesc.contains("lineSearch") && solverDesc["lineSearch"].is_string()){
-                    UG_LOG("lineSearch is string: ");
+                    //UG_LOG("lineSearch is string: ");
                     lineSearchType = solverDesc["lineSearch"];
-                    UG_LOG(lineSearchType << "\n");
+                    //UG_LOG(lineSearchType << "\n");
                     lineSearchDesc["type"] = lineSearchType;
                 }
                 else if (solverDesc.contains("lineSearch") && solverDesc["lineSearch"].is_object()){
-                    UG_LOG("lineSearch is object: ");
+                    //UG_LOG("lineSearch is object: ");
                     lineSearchDesc = solverDesc["lineSearch"];
-                    UG_LOG(lineSearchDesc.dump(4) << "\n");
+                    //UG_LOG(lineSearchDesc.dump(4) << "\n");
                 }
                 else{
                     UG_LOG(">> CreateNewtonSolver, lineSearchDesc must be a string or an object \n")
@@ -713,40 +709,40 @@ namespace ug
                 UG_LOG("CreatePreconditioner jacobi \n")
                 typedef Jacobi<TAlgebra> TJAC;
                 SmartPtr<TJAC> JAC = make_sp(new TJAC());
-                UG_LOG("jacobi, damping default\n")
+                UG_LOG("jacobi, damping default\n");
                 number damping = json_default_preconds["jac"]["damping"];
-                UG_LOG("jacobi, damping desc\n")
+                UG_LOG("jacobi, damping desc\n");
                 if (desc.contains("damping")){
                     damping = desc["damping"];
                 }
-                UG_LOG("jacobi, set damping\n")
+                UG_LOG("jacobi, set damping\n");
                 JAC->set_damp(damping);
                 preconditioner = JAC.template cast_static<TPrecond>();
             }
             else if (type == "gs"){
-                UG_LOG("CreatePreconditioner gauss seidel\n")
+                UG_LOG("CreatePreconditioner gauss seidel\n");
                 typedef GaussSeidel<TAlgebra> TGS;
                 SmartPtr<TGS> GS = make_sp(new TGS());
-                UG_LOG("consistentInterfaces default\n")
+                UG_LOG("consistentInterfaces default\n");
 
                 bool consistentInterfaces = json_default_preconds["gs"]["consistentInterfaces"];
-                UG_LOG("consistentInterfaces desc\n")
+                UG_LOG("consistentInterfaces desc\n");
                 if (desc.contains("consistentInterfaces")){
                     consistentInterfaces = desc["consistentInterfaces"];
                 }
-                UG_LOG("enable consistentInterfaces\n")
+                UG_LOG("enable consistentInterfaces\n");
                 GS->enable_consistent_interfaces(consistentInterfaces);
 
                 bool overlap = json_default_preconds["gs"]["overlap"];
                 if (desc.contains("overlap")){
                     overlap = desc["overlap"];
                 }
-                UG_LOG("enable overlap\n")
+                UG_LOG("enable overlap\n");
                 GS->enable_overlap(overlap);
                 preconditioner = GS.template cast_static<TPrecond>();
             }
             else if (type == "sgs"){
-                UG_LOG("CreatePreconditioner symmetric gauss seidel\n")
+                UG_LOG("CreatePreconditioner symmetric gauss seidel\n");
                 typedef SymmetricGaussSeidel<TAlgebra> TSGS;
                 SmartPtr<TSGS> SGS = make_sp(new TSGS());
                 bool consistentInterfaces = json_default_preconds["sgs"]["consistentInterfaces"];
@@ -763,13 +759,13 @@ namespace ug
                 preconditioner = SGS.template cast_static<TPrecond>();
             }
             else if (type == "egs"){
-                UG_LOG("CreatePreconditioner element gauss seidel\n")
+                UG_LOG("CreatePreconditioner element gauss seidel\n");
                 typedef ElementGaussSeidel<TDomain, TAlgebra> TEGS;
                 SmartPtr<TEGS> EGS = make_sp(new TEGS());
                 preconditioner = EGS.template cast_static<TPrecond>();
             }
             else if (type == "cgs"){
-                UG_LOG("CreatePreconditioner component gauss seidel\n")
+                UG_LOG("CreatePreconditioner component gauss seidel\n");
                 std::vector<std::string> vFullRowCmp;
                 typedef ComponentGaussSeidel<TDomain, TAlgebra> TCGS;
 
@@ -790,7 +786,7 @@ namespace ug
                 if (desc.contains("alpha")){
                     alpha = desc["alpha"];
                 }
-                UG_LOG("cgs, set alpha\n")
+                UG_LOG("cgs, set alpha\n");
                 CGS->set_alpha(alpha);
 
                 number beta = 1.0;
@@ -800,7 +796,7 @@ namespace ug
                 if (desc.contains("beta")){
                     beta = desc["beta"];
                 }
-                UG_LOG("cgs, set beta\n")
+                UG_LOG("cgs, set beta\n");
                 CGS->set_beta(beta);
 
                 bool weights = false;
@@ -810,13 +806,13 @@ namespace ug
                 if (desc.contains("weights")){
                     weights = desc["weights"];
                 }
-                UG_LOG("cgs, enable weights\n")
+                UG_LOG("cgs, enable weights\n");
                 CGS->set_weights(weights);
 
                 preconditioner = CGS.template cast_static<TPrecond>();
             }
             else if (type == "ssc"){
-                UG_LOG("CreatePreconditioner SequentialSubspaceCorrection \n")
+                UG_LOG("CreatePreconditioner SequentialSubspaceCorrection \n");
                 typedef SequentialSubspaceCorrection<TDomain, TAlgebra> TSSC;
                 number relax = 1.0;
                 if (json_default_preconds.contains("ssc") && json_default_preconds["ssc"].contains("relax")){
@@ -1033,9 +1029,9 @@ namespace ug
                 preconditioner = GMG.template cast_static<TPrecond>();
             }
             else if (type == "schur"){
-                UG_LOG("CreatePreconditioner SchurComplement \n")
-                typedef SchurPrecond<TAlgebra> Tschur;
-                SmartPtr<Tschur> SCHUR = make_sp(new Tschur());
+                UG_LOG("CreatePreconditioner SchurComplement \n");
+                typedef SchurPrecond<TAlgebra> TSchur;
+                SmartPtr<TSchur> schur = make_sp(new TSchur());
 
                 // load defaults
                 nlohmann::json json_default_preconds = json_predefined_defaults::solvers["preconditioner"];
@@ -1052,41 +1048,36 @@ namespace ug
                 if (desc.contains("dirichletSolver")){
                     if (desc["dirichletSolver"].is_string()){
                         dirichletSolverDesc["type"] = desc["dirichletSolver"];
-                        //dirichletSolverType = dirichletSolverDesc["type"];
                     }
                     else if (desc["dirichletSolver"].is_object()){
                         dirichletSolverDesc = desc["dirichletSolver"];
                     }
                     else{
-                        UG_LOG("DirichletSolver is not a string or an object, loading json default \n")
+                        UG_LOG("DirichletSolver is not valid, using default: " << dirichletSolverType << "\n");
                     }
                 }
                 if (desc.contains("skeletonSolver")){
                     if (desc["skeletonSolver"].is_string()){
                         skeletonSolverDesc["type"] = desc["skeletonSolver"];
-                        //skeletonSolverType = skeletonSolverDesc["type"];
                     }
                     else if (desc["skeletonSolver"].is_object()){
                         skeletonSolverDesc = desc["skeletonSolver"];
                     }
                     else{
-                        UG_LOG("SkeletonSolver is not a string or an object, loading json default \n")
+                        UG_LOG("SkeletonSolver is not valid, using default: " << skeletonSolverType << "\n")
                     }
                 }
-                typedef typename TAlgebra::vector_type TVector;
 
                 SmartPtr<ILinearOperatorInverse<TVector>> dirichletSolver = CreateLinearSolver(dirichletSolverDesc, solverutil);
-                SmartPtr<ILinearOperatorInverse<TVector, TVector>> skeletonSolver = CreateLinearSolver(skeletonSolverDesc, solverutil);
+                SmartPtr<ILinearOperatorInverse<TVector>> skeletonSolver = CreateLinearSolver(skeletonSolverDesc, solverutil);
+                SmartPtr<ISchurComplementInverse<TAlgebra>> schurInv = make_sp(new SchurInverseWithFullMatrix<TAlgebra>(skeletonSolver));
 
-                SCHUR->set_dirichlet_solver(dirichletSolver);
-                SmartPtr<ISchurComplementInverse<TAlgebra>> schurInv =
-    make_sp(new SchurInverseWithFullMatrix<TAlgebra>(skeletonSolver));
-                SCHUR->set_skeleton_solver(schurInv);
+                schur->set_dirichlet_solver(dirichletSolver);
+                schur->set_skeleton_solver(schurInv);
 
-                preconditioner = SCHUR.template cast_static<TPrecond>();
+                preconditioner = schur.template cast_static<TPrecond>();
             }
 
-            // return Preconditioner
             return preconditioner;
         }
 
