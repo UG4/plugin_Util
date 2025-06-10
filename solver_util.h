@@ -427,11 +427,9 @@ namespace ug
                 nlohmann::json precondDesc;
 
                 if (solverDesc.contains("precond") && solverDesc["precond"].is_object()){
-                    //UG_LOG("CreateLinearSolver, solverDesc is object \n");
                     precondDesc = solverDesc["precond"];
                 }
                 else if (solverDesc.contains("precond") && solverDesc["precond"].is_string()){
-                    //UG_LOG("CreateLinearSolver, solverDesc is string \n");
                     precondDesc["type"] = precondtype;
                 }
                 else{
@@ -450,11 +448,9 @@ namespace ug
                 nlohmann::json convCheckDesc;
 
                 if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_object()){
-                    //UG_LOG("CreateLinearSolver, convCheckDesc is object \n");
                     convCheckDesc = solverDesc["convCheck"];
                 }
                 else if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_string()){
-                    //UG_LOG("CreateLinearSolver, convCheckDesc is string \n");
                     convCheckDesc["type"] = convChecktype;
                 }
                 else{
@@ -495,11 +491,9 @@ namespace ug
                 // get descriptor for linear solver
                 if (solverDesc.contains("linSolver")){
                     if (solverDesc["linSolver"].is_string()){
-                        //UG_LOG("CreateNewtonSolver, linSolver is a string: \n");
                         linSolverDesc["type"] = solverDesc["linSolver"];
                     }
                     else if (solverDesc["linSolver"].is_object()){
-                        //UG_LOG("CreateNewtonSolver, linSolver is an object \n");
                         linSolverDesc = solverDesc["linSolver"];
                     }
                     else{
@@ -527,15 +521,13 @@ namespace ug
                 nlohmann::json convCheckDesc;
                 //UG_LOG("convCheck json default: ");
                 //UG_LOG(convCheckType << "\n");
+
                 // get descriptor for convergence check
                 if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_string()){
-                    //UG_LOG("convCheckDesc is string: ");
                     convCheckType = solverDesc["convCheck"];
-                    //UG_LOG(convCheckType << "\n");
                     convCheckDesc["type"] = convCheckType;
                 }
                 else if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_object()){
-                    //UG_LOG("convCheckDesc is object: ");
                     convCheckDesc = solverDesc["convCheck"];
                     //UG_LOG(convCheckDesc.dump(4) << "\n");
                 }
@@ -555,18 +547,15 @@ namespace ug
                 }
                 // get descriptor for line search
                 if (solverDesc.contains("lineSearch") && solverDesc["lineSearch"].is_string()){
-                    //UG_LOG("lineSearch is string: ");
                     lineSearchType = solverDesc["lineSearch"];
-                    //UG_LOG(lineSearchType << "\n");
                     lineSearchDesc["type"] = lineSearchType;
                 }
                 else if (solverDesc.contains("lineSearch") && solverDesc["lineSearch"].is_object()){
-                    //UG_LOG("lineSearch is object: ");
                     lineSearchDesc = solverDesc["lineSearch"];
                     //UG_LOG(lineSearchDesc.dump(4) << "\n");
                 }
                 else{
-                    UG_LOG(">> CreateNewtonSolver, lineSearchDesc must be a string or an object \n")
+                    UG_LOG(">> LineSearchDesc was not a string or an object, defaults are taken. \n")
                 }
                 
                 // if line_Search not null
@@ -814,22 +803,31 @@ namespace ug
             else if (type == "ssc"){
                 UG_LOG("CreatePreconditioner SequentialSubspaceCorrection \n");
                 typedef SequentialSubspaceCorrection<TDomain, TAlgebra> TSSC;
-                number relax = 1.0;
-                if (json_default_preconds.contains("ssc") && json_default_preconds["ssc"].contains("relax")){
-                    relax = json_default_preconds["ssc"]["relax"];
+                //number relax = 1.0;
+                number damping = 1.0;
+                if (json_default_preconds.contains("ssc") && json_default_preconds["ssc"].contains("damping")){
+                    damping = json_default_preconds["ssc"]["damping"];
                 }
-                if (desc.contains("relax")){
-                    relax = desc["relax"];
+                if (desc.contains("damping")){
+                    damping = desc["damping"];
                 }
-                SmartPtr<TSSC> SSC = make_sp(new TSSC(relax));
-
+                SmartPtr<TSSC> SSC = make_sp(new TSSC(damping));
+                
                 typedef VertexCenteredVankaSubspace<TDomain, TAlgebra> TVCVS;
                 std::vector<std::string> vVtxCmp;  // primary (vertex) components
                 std::vector<std::string> vElemCmp; // secondary (element) components
-
-                // TODO: primary = desc.vertex[1] secondary = desc.vertex[2]
                 
-		        SmartPtr<TVCVS> vertex_vanka = make_sp(new TVCVS(vVtxCmp, vElemCmp));
+                const auto& primary = desc["vertex"][0];
+                const auto& secondary = desc["vertex"][1];
+
+                for (const auto& pr : primary){
+                    vVtxCmp.push_back(pr.get<std::string>());
+                }
+                for (const auto& sec : secondary){
+                    vElemCmp.push_back(sec.get<std::string>());
+                }
+                
+                SmartPtr<TVCVS> vertex_vanka = make_sp(new TVCVS(vVtxCmp, vElemCmp));
                 SSC->set_vertex_subspace(vertex_vanka);
                 
                 preconditioner = SSC.template cast_static<TPrecond>();
@@ -1077,6 +1075,8 @@ namespace ug
 
                 preconditioner = schur.template cast_static<TPrecond>();
             }
+            // force exit if preconditioner is invalid
+            CondAbort(preconditioner.invalid(), "Invalid preconditioner specified:: " + type);
 
             return preconditioner;
         }

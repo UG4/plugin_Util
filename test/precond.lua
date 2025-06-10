@@ -58,8 +58,9 @@ local cgsDesc ={
 	relax = 1.0	
 }
 local sscDesc ={
-	type = "ssc",
-	relax = 1.0
+        type = "ssc", 
+        damping = 1.0, 
+        vertex = {{"p"}, {"ux", "uy"}}
 }
 local schurDesc ={
 	type = "schur",
