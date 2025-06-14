@@ -49,6 +49,7 @@
 #include "lib_algebra/operator/linear_solver/gmres.h"
 #include "lib_algebra/operator/linear_solver/agglomerating_solver.h"
 #include "lib_algebra/operator/linear_solver/lu.h"
+#include "lib_algebra/operator/debug_writer.h"
 #include "../SuperLU6/super_lu.h"
 #include "lib_disc/operator/linear_operator/subspace_correction/sequential_subspace_correction.h"
 #include "lib_disc/spatial_disc/domain_disc.h"
@@ -820,12 +821,10 @@ namespace ug
                 const auto& primary = desc["vertex"][0];
                 const auto& secondary = desc["vertex"][1];
 
-                for (const auto& pr : primary){
+                for (const auto& pr : primary)
                     vVtxCmp.push_back(pr.get<std::string>());
-                }
-                for (const auto& sec : secondary){
+                for (const auto& sec : secondary)
                     vElemCmp.push_back(sec.get<std::string>());
-                }
                 
                 SmartPtr<TVCVS> vertex_vanka = make_sp(new TVCVS(vVtxCmp, vElemCmp));
                 SSC->set_vertex_subspace(vertex_vanka);
@@ -836,14 +835,14 @@ namespace ug
                 UG_LOG("CreatePreconditioner Geometric MultiGrid (GMG)\n");
                 // idea: dont convert the objects of the lua table into json give them directly to the CreatePreconditioner Function
                 typedef AssembledMultiGridCycle<TDomain, TAlgebra> TGMG;
-                SmartPtr<ApproximationSpace<TDomain>> approxSpace;
+                //SmartPtr<ApproximationSpace<TDomain>> approxSpace;
                 SmartPtr<TGMG> GMG = make_sp(new TGMG());
                 if (solverutil.hasComponent("approxSpace")){
                     UG_LOG("ApproximationSpace found!\n");
                     approxSpace = std::get<SmartPtr<ApproximationSpace<TDomain>>>(
                         solverutil.getComponent("approxSpace"));
 
-                    SmartPtr<TGMG> GMG = make_sp(new TGMG(approxSpace));
+                    GMG = make_sp(new TGMG(approxSpace));
                 }
                 else{
                     UG_LOG("An ApproximationSpace is required to create a 'gmg' solver.\n");
@@ -1243,6 +1242,65 @@ namespace ug
                 solverutil.getComponent("debugger"));
             return debugger;
         }
+
+        template<typename TDomain, typename TAlgebra, typename TVector, typename TSolver>
+        void SetDebugWriter(SmartPtr<TSolver> obj,
+                            nlohmann::json& solverDesc,
+                            nlohmann::json* json_defaults = nullptr,
+                            const SolverUtil<TDomain, TAlgebra>* solverutil = nullptr){
+            auto& desc = solverDesc;
+            auto* defaults = json_defaults;
+
+            auto dbgDescIt = desc.find("debug");
+            if (dbgDescIt == desc.end() && defaults){
+                dbgDescIt = defaults->find("debug");
+            }
+
+            if (dbgDescIt != desc.end()){
+                const auto& dbgDesc = *dbgDescIt;
+
+                bool debug = false;
+                bool vtk = true;
+                bool conn_viewer = false;
+
+                if (dbgDesc.is_boolean()){
+                    debug = dbgDesc.get<bool>();
+                }
+                else if (dbgDesc.is_object()){
+                    debug = dbgDesc.value("debug", true);
+                    vtk = dbgDesc.value("vtk", true);
+                    conn_viewer = dbgDesc.value("conn_viewer", false);
+                }
+                else {
+                    UG_THROW("Unrecognized type of debug writer specification.");
+                }
+
+                if (debug){
+                    SmartPtr<IDebugWriter<TVector>> dbgWriter;
+
+                    if (solverutil && solverutil->hasComponent("debug")){
+                        dbgWriter = solverutil->template getComponentAs<IDebugWriter<TVector>>("debug");
+                    }
+                    else {
+                        SmartPtr<ApproximationSpace<TDomain>> approxSpace;
+
+                        if (solverutil && solverutil->hasComponent("approxSpace")){
+                            approxSpace = solverutil->template getComponentAs<ApproximationSpace<TDomain>>("approxSpace");
+                        }
+
+                        if (!approxSpace){
+                            UG_THROW("An ApproximationSpace is required to create the DebugWriter.");
+                        }
+
+                        dbgWriter = make_sp(new GridFunctionDebugWriter<TDomain, TAlgebra>(approxSpace));
+                        dbgWriter->set_vtk_output(vtk);
+                        dbgWriter->set_conn_viewer_output(conn_viewer);
+                    }
+                    obj->set_debug(dbgWriter);
+                }
+            }
+        }
+
         // Needs tests independent from other util.lua
         template <typename TDomain, typename TAlgebra>
         std::tuple<MatrixOperator<typename TAlgebra::matrix_type, typename TAlgebra::vector_type>,
