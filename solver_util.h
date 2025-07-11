@@ -246,6 +246,88 @@ namespace ug
             return ls;
         }
 
+        template<typename TDomain, typename TAlgebra, typename TVector, typename TSolver>
+        void SetDebugWriter(SmartPtr<TSolver> obj,
+                            nlohmann::json& solverDesc,
+                            const nlohmann::json* json_defaults = nullptr,
+                            const SolverUtil<TDomain, TAlgebra>* solverutil = nullptr){
+            // Try to find the debug description in the JSON 'desc'
+            // First check "debug", then fallback to "debugSolver"
+            // If neither is found, check the defaults JSON if provided
+            auto& desc = solverDesc;
+            auto defaults = json_defaults;
+
+            auto dbgDescIt = desc.find("debug");
+            if (dbgDescIt == desc.end()){
+                dbgDescIt = desc.find("debugSolver");
+            }
+            if (dbgDescIt == desc.end() && defaults){
+                dbgDescIt = defaults->find("debug");
+            }
+
+            if (dbgDescIt != desc.end()){
+                const auto& dbgDesc = *dbgDescIt;
+
+                // Default flags for debugging output
+                bool debug = false;
+                bool vtk = true;
+                bool conn_viewer = false;
+
+                // Checks the type
+                if (dbgDesc.is_boolean()){
+                    debug = dbgDesc.get<bool>();
+                }
+                else if (dbgDesc.is_object()){
+                    debug = dbgDesc.value("debug", true);
+                    vtk = dbgDesc.value("vtk", true);
+                    conn_viewer = dbgDesc.value("conn_viewer", false);
+                }
+                else {
+                    UG_THROW("Unrecognized type of debug writer specification.");
+                }
+
+                // If debugging is enabled, set up the debug writer
+                if (debug){
+                    SmartPtr<IVectorDebugWriter<TVector>> dbgWriter;
+
+                    // Use debug writer from solverutil if available
+                    if (solverutil && solverutil->hasComponent("debug")){
+                        auto rawDbg = solverutil->template getComponentAs<GridFunctionDebugWriter<TDomain, TAlgebra>>("debug");
+                        dbgWriter = SmartPtr<IVectorDebugWriter<typename TAlgebra::vector_type>>(rawDbg);
+                    }
+                    else {
+                        // Otherwise, create a new debug writer with ApproximationSpace
+                        SmartPtr<ApproximationSpace<TDomain>> approxSpace;
+
+                        if (solverutil && solverutil->hasComponent("approxSpace")){
+                            approxSpace = solverutil->template getComponentAs<ApproximationSpace<TDomain>>("approxSpace");
+                        }
+
+                        if (!approxSpace){
+                            UG_THROW("An ApproximationSpace is required to create the DebugWriter.");
+                        }
+
+                        // Create a GridFunctionDebugWriter instance using the given ApproximationSpace.
+                        // GridFunctionDebugWriter<TDomain, TAlgebra> implements the IVectorDebugWriter<TVector> interface,
+                        // so we store it as a SmartPtr to the concrete type first (TWriter),
+                        // then cast it dynamically to the interface type (IVectorDebugWriter<TVector>).
+                        typedef GridFunctionDebugWriter<TDomain, TAlgebra> TWriter;
+                        SmartPtr<TWriter> Writer;
+                        Writer = make_sp(new TWriter(approxSpace));
+                        //SmartPtr<IDebugWriter<TVector>> dbgWriter;
+                        dbgWriter = Writer.template cast_dynamic<IVectorDebugWriter<TVector>>();
+                        //dbgWriter = make_sp(new GridFunctionDebugWriter<TDomain, TAlgebra>(approxSpace));
+
+                        // Configure output options
+                        dbgWriter->set_vtk_output(vtk);
+                        dbgWriter->set_conn_viewer_output(conn_viewer);
+                    }
+                    // Assign the debug writer to the solver object
+                    obj->set_debug(dbgWriter);
+                }
+            }
+        }
+
         template<typename TDomain, typename TAlgebra>
         SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>>
         CreateLinearSolver(nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra> &solverutil){
@@ -570,7 +652,11 @@ namespace ug
                     newtonSolver->set_reassemble_J_freq(solverDesc["reassemble_J_freq"]);
                 }
 
-                // SetDebugWriter(newtonSolver, solverDesc, defaults, solverutil);
+                using Dom = TDomain;
+                using Alg = TAlgebra;
+                using Vec = typename TAlgebra::vector_type;
+                using Newt = NewtonSolver<TAlgebra>;
+                ug::Util::SetDebugWriter<Dom, Alg, Vec, Newt>(newtonSolver, solverDesc, &json_default_nonlinearSolver, &solverutil);
                 return newtonSolver;
             }
             UG_THROW("CreateNewtonSolver: Only 'newton' solver type is supported in this function.")
@@ -978,6 +1064,7 @@ namespace ug
                     debugDesc = SetDebugger(desc, solverutil);
                     GMG->set_debug(debugDesc);
                 }
+                
 
                 bool gatheredBaseSolverIfAmbiguous = json_default_preconds["gmg"]["gatheredBaseSolverIfAmbiguous"];
                 UG_LOG("gatheredBaseSolverIfAMb found!\n")
@@ -1243,313 +1330,17 @@ namespace ug
             return debugger;
         }
 
-        template<typename TDomain, typename TAlgebra, typename TVector, typename TSolver>
-        void SetDebugWriter(SmartPtr<TSolver> obj,
-                            nlohmann::json& solverDesc,
-                            nlohmann::json* json_defaults = nullptr,
-                            const SolverUtil<TDomain, TAlgebra>* solverutil = nullptr){
-            auto& desc = solverDesc;
-            auto* defaults = json_defaults;
-
-            auto dbgDescIt = desc.find("debug");
-            if (dbgDescIt == desc.end() && defaults){
-                dbgDescIt = defaults->find("debug");
-            }
-
-            if (dbgDescIt != desc.end()){
-                const auto& dbgDesc = *dbgDescIt;
-
-                bool debug = false;
-                bool vtk = true;
-                bool conn_viewer = false;
-
-                if (dbgDesc.is_boolean()){
-                    debug = dbgDesc.get<bool>();
-                }
-                else if (dbgDesc.is_object()){
-                    debug = dbgDesc.value("debug", true);
-                    vtk = dbgDesc.value("vtk", true);
-                    conn_viewer = dbgDesc.value("conn_viewer", false);
-                }
-                else {
-                    UG_THROW("Unrecognized type of debug writer specification.");
-                }
-
-                if (debug){
-                    SmartPtr<IDebugWriter<TVector>> dbgWriter;
-
-                    if (solverutil && solverutil->hasComponent("debug")){
-                        dbgWriter = solverutil->template getComponentAs<IDebugWriter<TVector>>("debug");
-                    }
-                    else {
-                        SmartPtr<ApproximationSpace<TDomain>> approxSpace;
-
-                        if (solverutil && solverutil->hasComponent("approxSpace")){
-                            approxSpace = solverutil->template getComponentAs<ApproximationSpace<TDomain>>("approxSpace");
-                        }
-
-                        if (!approxSpace){
-                            UG_THROW("An ApproximationSpace is required to create the DebugWriter.");
-                        }
-
-                        dbgWriter = make_sp(new GridFunctionDebugWriter<TDomain, TAlgebra>(approxSpace));
-                        dbgWriter->set_vtk_output(vtk);
-                        dbgWriter->set_conn_viewer_output(conn_viewer);
-                    }
-                    obj->set_debug(dbgWriter);
-                }
-            }
-        }
-
-        // Needs tests independent from other util.lua
-        template <typename TDomain, typename TAlgebra>
-        std::tuple<MatrixOperator<typename TAlgebra::matrix_type, typename TAlgebra::vector_type>,
-                   GridFunction<ug::GridFunction<TDomain, TAlgebra>, typename TAlgebra::vector_type>,
-                   GridFunction<ug::GridFunction<TDomain, TAlgebra>, typename TAlgebra::vector_type>>
-        SolveLinearProblem(SmartPtr<DomainDiscretization<TDomain, TAlgebra>> &domainDisc,
-                           nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra> &solverutil,
-                           std::string outFilePrefix,
-                           SmartPtr<UserData<number, TDomain::dim, number>> startValueCB = nullptr)
-        {
-
-            typedef ug::GridFunction<TDomain, TAlgebra> TFct;
-            typedef typename TAlgebra::vector_type vector_type;
-            typedef MatrixOperator<typename TAlgebra::matrix_type, typename TAlgebra::vector_type> MO;
-            SmartPtr<MO> A = make_sp(new MO());
-            typedef GridFunction<TFct, vector_type> GF;
-            SmartPtr<GF> u = make_sp(new GF());
-            SmartPtr<GF> b = make_sp(new GF());
-
-            A = AssembledLinearOperator(domainDisc);
-            u = GridFunction(domainDisc->approximation_space());
-            b = GridFunction(domainDisc->approximation_space());
-            if (!startValueCB.valid()){
-                u->set(0.0);
-            }
-            else if (startValueCB->is_const()) {
-                u->set(startValueCB->const_value());
-            }
-            domainDisc->adjust_solution(u);
-            domainDisc->assemble_linear(A, b);
-
-            std::string type;
-
-            if (solverDesc.contains("type")) {
-                type = solverDesc["type"];
-                if (type == "newton") {
-                    auto solver = CreateNewtonSolver(solverDesc, solverutil);
-                    solver->init(A, u);
-                    solver->apply(u, b);
-                }
-                else {
-                    auto solver = CreateLinearSolver(solverDesc, solverutil);
-                    solver->init(A, u);
-                    solver->apply(u, b);
-                }
-            }
-
-            if (outFilePrefix.empty())
-            {
-                WriteGridFunctionToVTK(u, outFilePrefix);
-                    SaveVectorForConnectionViewer(u, (outFilePrefix + ".vec").c_str());
-            }
-
-            return A, u, b;
-        }
-        // Need tests dependent from util.SolveLinearTimeProblem
-        template<typename TDomain, typename TAlgebra>
-        nlohmann::json SolveLinearTimeProblem(SmartPtr<DomainDiscretization<TDomain, TAlgebra>> &domainDisc,
-                nlohmann::json &solverDesc, nlohmann::json &timeDesc, nlohmann::json &outDesc,
-                SolverUtil<TDomain, TAlgebra> &solverutil,
-                SmartPtr<UserData<number, TDomain::dim, number>> startValueCB = nullptr){
-            static const int dim = TDomain::dim;
-            nlohmann::json json_default_solver;
-            nlohmann::json json_solver;
-        if (timeDesc.is_object()) {
-            json_solver = timeDesc;
-            std::string name;
-            if (json_solver.contains("name") || json_solver.contains("type")) {
-                name = json_solver["name"];
-                name = json_solver["type"];
-            }
-            if (json_predefined_defaults::solvers.contains(name)) {
-                json_default_solver = json_predefined_defaults::solvers[name];
-            }
-        }
-
-            number start = json_default_solver["start"];
-            if (json_solver.contains("start")) {
-                start = json_solver["start"];
-            }
-            number stop = json_default_solver["stop"];
-            if (json_solver.contains("stop")) {
-                stop = json_solver["stop"];
-            }
-            std::string scheme = json_default_solver["scheme"];
-            if (json_solver.contains("scheme")) {
-                scheme = json_solver["scheme"];
-            }
-            number dt = json_default_solver["dt"];
-            if (json_solver.contains("dt")) {
-                dt = json_solver["dt"];
-            }
-
-
-
-        typedef ug::GridFunction<TDomain, TAlgebra> TFct;
-        typedef typename TAlgebra::vector_type vector_type;
-
-        typedef GridFunction<TFct, vector_type> GF;
-        SmartPtr<GF> u = make_sp(new GF());
-        u = GridFunction(domainDisc->approximation_space());
-        if (!startValueCB.valid()){
-                u->set(0.0);
-        }
-        else if (startValueCB->is_const()) {
-                u->set(startValueCB->const_value());
-        }
-
-
-            std::string type;
-            auto solver = CreateSolver(solverDesc, solverutil);
-            if (solverDesc.contains("type")) {
-                type = solverDesc["type"];
-                if (type == "newton") {
-                    auto solver = CreateNewtonSolver(solverDesc, solverutil);
-                }
-                else {
-                    auto solver = CreateLinearSolver(solverDesc, solverutil);
-                }
-            }
-
-
-
-        typedef VTKOutput<dim> VTKO;
-            SmartPtr<VTKO> vtkOut = make_sp(new VTKO());
-
-        std::string outFilePrefix;
-        if (outDesc.is_string()) {
-            outFilePrefix = outDesc.get<std::string>();
-        }
-        if (outDesc.is_object()) {
-            if(outDesc.contains("prefix")){
-            outFilePrefix += outDesc["prefix"];
-            }
-            if (outDesc.contains("vtkOut")) {
-                vtkOut = outDesc["vtkOut"];
-            }
-        }
-            nlohmann::json SolverLinearTimeProblemDesc;
-            SolverLinearTimeProblemDesc["u"] = u;
-            SolverLinearTimeProblemDesc["DomainDesc"] = domainDisc;
-            SolverLinearTimeProblemDesc["Solver"] = solver;
-            SolverLinearTimeProblemDesc["vtkOut"] = vtkOut;
-            SolverLinearTimeProblemDesc["scheme"] = scheme;
-            SolverLinearTimeProblemDesc["number"] = 1;
-            SolverLinearTimeProblemDesc["start"] = start;
-            SolverLinearTimeProblemDesc["stop"] = stop;
-            SolverLinearTimeProblemDesc["dt"] = dt;
-            return SolverLinearTimeProblemDesc;
-        }
-
-        // Need tests dependent from util.SolveNonLinearTimeProblem
-        template<typename TDomain, typename TAlgebra>
-        nlohmann::json SolveNonLinearTimeProblem(SmartPtr<DomainDiscretization<TDomain, TAlgebra>> &domainDisc,
-                nlohmann::json &solverDesc, nlohmann::json &timeDesc, nlohmann::json &outDesc,
-                SolverUtil<TDomain, TAlgebra> &solverutil,
-                SmartPtr<UserData<number, TDomain::dim, number>> startValueCB = nullptr){
-            static const int dim = TDomain::dim;
-            nlohmann::json json_default_solver;
-            nlohmann::json json_solver;
-            if (timeDesc.is_object()) {
-                json_solver = timeDesc;
-                std::string name;
-                if (json_solver.contains("name") || json_solver.contains("type")) {
-                    name = json_solver["name"];
-                    name = json_solver["type"];
-                }
-                if (json_predefined_defaults::solvers.contains(name)) {
-                    json_default_solver = json_predefined_defaults::solvers[name];
-                }
-            }
-
-            number start = json_default_solver["start"];
-            if (json_solver.contains("start")) {
-                start = json_solver["start"];
-            }
-            number stop = json_default_solver["stop"];
-            if (json_solver.contains("stop")) {
-                stop = json_solver["stop"];
-            }
-            std::string scheme = json_default_solver["scheme"];
-            if (json_solver.contains("scheme")) {
-                scheme = json_solver["scheme"];
-            }
-            number dt = json_default_solver["dt"];
-            if (json_solver.contains("dt")) {
-                dt = json_solver["dt"];
-            }
-            typedef ug::GridFunction<TDomain, TAlgebra> TFct;
-            typedef typename TAlgebra::vector_type vector_type;
-
-            typedef GridFunction<TFct, vector_type> GF;
-            SmartPtr<GF> u = make_sp(new GF());
-            u = GridFunction(domainDisc->approximation_space());
-            if (!startValueCB.valid()){
-                u->set(0.0);
-            }
-            else if (startValueCB->is_const()) {
-                u->set(startValueCB->const_value());
-            }
-            std::string type;
-            auto solver = CreateSolver(solverDesc, solverutil);
-            if (solverDesc.contains("type")) {
-                type = solverDesc["type"];
-                if (type == "newton") {
-                    auto solver = CreateNewtonSolver(solverDesc, solverutil);
-                }
-                else {
-                    auto solver = CreateLinearSolver(solverDesc, solverutil);
-                }
-            }
 
 
 
 
-
-            typedef VTKOutput<dim> VTKO;
-            SmartPtr<VTKO> vtkOut = make_sp(new VTKO());
-            std::string outFilePrefix;
-            if (outDesc.is_string()) {
-                outFilePrefix = outDesc.get<std::string>();
-            }
-            if (outDesc.is_object()) {
-                if(outDesc.contains("prefix")){
-                    outFilePrefix += outDesc["prefix"];
-                }
-                if (outDesc.contains("vtkOut")) {
-                    vtkOut = outDesc["vtkOut"];
-                }
-            }
-            nlohmann::json SolverLinearTimeProblemDesc;
-            SolverLinearTimeProblemDesc["u"] = u;
-            SolverLinearTimeProblemDesc["DomainDesc"] = domainDisc;
-            SolverLinearTimeProblemDesc["Solver"] = solver;
-            SolverLinearTimeProblemDesc["vtkOut"] = vtkOut;
-            SolverLinearTimeProblemDesc["scheme"] = scheme;
-            SolverLinearTimeProblemDesc["number"] = 1;
-            SolverLinearTimeProblemDesc["start"] = start;
-            SolverLinearTimeProblemDesc["stop"] = stop;
-            SolverLinearTimeProblemDesc["dt"] = dt;
-            return SolverLinearTimeProblemDesc;
-        }
         /*
          * Helper class to provide c++ util functions in lua.
-         * We can instaciate this object in lua via
+         * We can instantiate this object in lua via
          * local functionProvider = SolverUtilFunctionProvider()
          * and automatically get the correct templated class,
          * e.g SolverUtilFunctionProvider2dCPU1
-         * this means functionprovider automatically chooses
+         * this means function provider automatically chooses
          * the correct templated util functions!
          */
 
@@ -1561,8 +1352,7 @@ namespace ug
             typedef typename TAlgebra::matrix_type matrix_type;
             const static int dim = TDomain::dim;
 
-            SolverUtilFunctionProvider(){
-            };
+            SolverUtilFunctionProvider(){};
 
             SmartPtr<ILinearIterator<typename TAlgebra::vector_type>>
             GetCreatePreconditioner(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
