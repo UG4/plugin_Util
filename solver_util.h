@@ -26,6 +26,10 @@
 #include "lib_disc/ordering_strategies/algorithms/lexorder.h"
 #include "lib_disc/ordering_strategies/algorithms/riverorder.h"
 // include solver components
+#include "../../externals/JSONForUG4/json-cxx/include/nlohmann/adl_serializer.hpp"
+#include "../../externals/JSONForUG4/json-cxx/include/nlohmann/json.hpp"
+#include "../../externals/JSONForUG4/json-cxx/single_include/nlohmann/json.hpp"
+#include "../../externals/JSONForUG4/json-cxx/single_include/nlohmann/json.hpp"
 #include "lib_disc/function_spaces/grid_function.h"
 #include "lib_algebra/operator/preconditioner/ilu.h"
 #include "lib_algebra/operator/preconditioner/ilut.h"
@@ -43,6 +47,7 @@
 #include "lib_algebra/operator/linear_solver/agglomerating_solver.h"
 #include "lib_algebra/operator/linear_solver/lu.h"
 #include "../SuperLU6/super_lu.h"
+#include "lib_disc/spatial_disc/domain_disc.h"
 
 namespace ug
 {
@@ -1268,7 +1273,248 @@ namespace ug
                 solverutil.getComponent("debugger"));
             return debugger;
         }
+        // Needs tests independent from other util.lua 
+        template <typename TDomain, typename TAlgebra>
+        std::tuple<MatrixOperator<typename TAlgebra::matrix_type, typename TAlgebra::vector_type>,
+                   GridFunction<ug::GridFunction<TDomain, TAlgebra>, typename TAlgebra::vector_type>,
+                   GridFunction<ug::GridFunction<TDomain, TAlgebra>, typename TAlgebra::vector_type>>
+        SolveLinearProblem(SmartPtr<DomainDiscretization<TDomain, TAlgebra>> &domainDisc,
+                           nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra> &solverutil,
+                           std::string outFilePrefix,
+                           SmartPtr<UserData<number, TDomain::dim, number>> startValueCB = nullptr)
+        {
 
+            typedef ug::GridFunction<TDomain, TAlgebra> TFct;
+            typedef typename TAlgebra::vector_type vector_type;
+            typedef MatrixOperator<typename TAlgebra::matrix_type, typename TAlgebra::vector_type> MO;
+            SmartPtr<MO> A = make_sp(new MO());
+            typedef GridFunction<TFct, vector_type> GF;
+            SmartPtr<GF> u = make_sp(new GF());
+            SmartPtr<GF> b = make_sp(new GF());
+
+            A = AssembledLinearOperator(domainDisc);
+            u = GridFunction(domainDisc->approximation_space());
+            b = GridFunction(domainDisc->approximation_space());
+            if (!startValueCB.valid()){
+                u->set(0.0);
+            }
+            else if (startValueCB->is_const()) {
+                u->set(startValueCB->const_value());
+            }
+            domainDisc->adjust_solution(u);
+            domainDisc->assemble_linear(A, b);
+
+            std::string type;
+
+            if (solverDesc.contains("type")) {
+                type = solverDesc["type"];
+                if (type == "newton") {
+                    auto solver = CreateNewtonSolver(solverDesc, solverutil);
+                    solver->init(A, u);
+                    solver->apply(u, b);
+                }
+                else {
+                    auto solver = CreateLinearSolver(solverDesc, solverutil);
+                    solver->init(A, u);
+                    solver->apply(u, b);
+                }
+            }
+
+            if (outFilePrefix.empty())
+            {
+                WriteGridFunctionToVTK(u, outFilePrefix);
+                    SaveVectorForConnectionViewer(u, (outFilePrefix + ".vec").c_str());
+            }
+
+            return A, u, b;
+        }
+        // Need tests dependent from util.SolveLinearTimeProblem
+        template<typename TDomain, typename TAlgebra>
+        nlohmann::json SolveLinearTimeProblem(SmartPtr<DomainDiscretization<TDomain, TAlgebra>> &domainDisc,
+                nlohmann::json &solverDesc, nlohmann::json &timeDesc, nlohmann::json &outDesc,
+                SolverUtil<TDomain, TAlgebra> &solverutil,
+                SmartPtr<UserData<number, TDomain::dim, number>> startValueCB = nullptr){
+            static const int dim = TDomain::dim;
+            nlohmann::json json_default_solver;
+            nlohmann::json json_solver;
+        if (timeDesc.is_object()) {
+            json_solver = timeDesc;
+            std::string name;
+            if (json_solver.contains("name") || json_solver.contains("type")) {
+                name = json_solver["name"];
+                name = json_solver["type"];
+            }
+            if (json_predefined_defaults::solvers.contains(name)) {
+                json_default_solver = json_predefined_defaults::solvers[name];
+            }
+        }
+
+            number start = json_default_solver["start"];
+            if (json_solver.contains("start")) {
+                start = json_solver["start"];
+            }
+            number stop = json_default_solver["stop"];
+            if (json_solver.contains("stop")) {
+                stop = json_solver["stop"];
+            }
+            std::string scheme = json_default_solver["scheme"];
+            if (json_solver.contains("scheme")) {
+                scheme = json_solver["scheme"];
+            }
+            number dt = json_default_solver["dt"];
+            if (json_solver.contains("dt")) {
+                dt = json_solver["dt"];
+            }
+
+
+
+        typedef ug::GridFunction<TDomain, TAlgebra> TFct;
+        typedef typename TAlgebra::vector_type vector_type;
+
+        typedef GridFunction<TFct, vector_type> GF;
+        SmartPtr<GF> u = make_sp(new GF());
+        u = GridFunction(domainDisc->approximation_space());
+        if (!startValueCB.valid()){
+                u->set(0.0);
+        }
+        else if (startValueCB->is_const()) {
+                u->set(startValueCB->const_value());
+        }
+
+
+            std::string type;
+            auto solver = CreateSolver(solverDesc, solverutil);
+            if (solverDesc.contains("type")) {
+                type = solverDesc["type"];
+                if (type == "newton") {
+                    auto solver = CreateNewtonSolver(solverDesc, solverutil);
+                }
+                else {
+                    auto solver = CreateLinearSolver(solverDesc, solverutil);
+                }
+            }
+
+
+
+        typedef VTKOutput<dim> VTKO;
+            SmartPtr<VTKO> vtkOut = make_sp(new VTKO());
+
+        std::string outFilePrefix;
+        if (outDesc.is_string()) {
+            outFilePrefix = outDesc.get<std::string>();
+        }
+        if (outDesc.is_object()) {
+            if(outDesc.contains("prefix")){
+            outFilePrefix += outDesc["prefix"];
+            }
+            if (outDesc.contains("vtkOut")) {
+                vtkOut = outDesc["vtkOut"];
+            }
+        }
+            nlohmann::json SolverLinearTimeProblemDesc;
+            SolverLinearTimeProblemDesc["u"] = u;
+            SolverLinearTimeProblemDesc["DomainDesc"] = domainDisc;
+            SolverLinearTimeProblemDesc["Solver"] = solver;
+            SolverLinearTimeProblemDesc["vtkOut"] = vtkOut;
+            SolverLinearTimeProblemDesc["scheme"] = scheme;
+            SolverLinearTimeProblemDesc["number"] = 1;
+            SolverLinearTimeProblemDesc["start"] = start;
+            SolverLinearTimeProblemDesc["stop"] = stop;
+            SolverLinearTimeProblemDesc["dt"] = dt;
+            return SolverLinearTimeProblemDesc;
+        }
+
+        // Need tests dependent from util.SolveNonLinearTimeProblem
+        template<typename TDomain, typename TAlgebra>
+        nlohmann::json SolveNonLinearTimeProblem(SmartPtr<DomainDiscretization<TDomain, TAlgebra>> &domainDisc,
+                nlohmann::json &solverDesc, nlohmann::json &timeDesc, nlohmann::json &outDesc,
+                SolverUtil<TDomain, TAlgebra> &solverutil,
+                SmartPtr<UserData<number, TDomain::dim, number>> startValueCB = nullptr){
+            static const int dim = TDomain::dim;
+            nlohmann::json json_default_solver;
+            nlohmann::json json_solver;
+            if (timeDesc.is_object()) {
+                json_solver = timeDesc;
+                std::string name;
+                if (json_solver.contains("name") || json_solver.contains("type")) {
+                    name = json_solver["name"];
+                    name = json_solver["type"];
+                }
+                if (json_predefined_defaults::solvers.contains(name)) {
+                    json_default_solver = json_predefined_defaults::solvers[name];
+                }
+            }
+
+            number start = json_default_solver["start"];
+            if (json_solver.contains("start")) {
+                start = json_solver["start"];
+            }
+            number stop = json_default_solver["stop"];
+            if (json_solver.contains("stop")) {
+                stop = json_solver["stop"];
+            }
+            std::string scheme = json_default_solver["scheme"];
+            if (json_solver.contains("scheme")) {
+                scheme = json_solver["scheme"];
+            }
+            number dt = json_default_solver["dt"];
+            if (json_solver.contains("dt")) {
+                dt = json_solver["dt"];
+            }
+            typedef ug::GridFunction<TDomain, TAlgebra> TFct;
+            typedef typename TAlgebra::vector_type vector_type;
+
+            typedef GridFunction<TFct, vector_type> GF;
+            SmartPtr<GF> u = make_sp(new GF());
+            u = GridFunction(domainDisc->approximation_space());
+            if (!startValueCB.valid()){
+                u->set(0.0);
+            }
+            else if (startValueCB->is_const()) {
+                u->set(startValueCB->const_value());
+            }
+            std::string type;
+            auto solver = CreateSolver(solverDesc, solverutil);
+            if (solverDesc.contains("type")) {
+                type = solverDesc["type"];
+                if (type == "newton") {
+                    auto solver = CreateNewtonSolver(solverDesc, solverutil);
+                }
+                else {
+                    auto solver = CreateLinearSolver(solverDesc, solverutil);
+                }
+            }
+
+
+
+
+
+            typedef VTKOutput<dim> VTKO;
+            SmartPtr<VTKO> vtkOut = make_sp(new VTKO());
+            std::string outFilePrefix;
+            if (outDesc.is_string()) {
+                outFilePrefix = outDesc.get<std::string>();
+            }
+            if (outDesc.is_object()) {
+                if(outDesc.contains("prefix")){
+                    outFilePrefix += outDesc["prefix"];
+                }
+                if (outDesc.contains("vtkOut")) {
+                    vtkOut = outDesc["vtkOut"];
+                }
+            }
+            nlohmann::json SolverLinearTimeProblemDesc;
+            SolverLinearTimeProblemDesc["u"] = u;
+            SolverLinearTimeProblemDesc["DomainDesc"] = domainDisc;
+            SolverLinearTimeProblemDesc["Solver"] = solver;
+            SolverLinearTimeProblemDesc["vtkOut"] = vtkOut;
+            SolverLinearTimeProblemDesc["scheme"] = scheme;
+            SolverLinearTimeProblemDesc["number"] = 1;
+            SolverLinearTimeProblemDesc["start"] = start;
+            SolverLinearTimeProblemDesc["stop"] = stop;
+            SolverLinearTimeProblemDesc["dt"] = dt;
+            return SolverLinearTimeProblemDesc;
+        }
         /*
          * Helper class to provide c++ util functions in lua.
          * We can instaciate this object in lua via
@@ -1329,6 +1575,30 @@ namespace ug
             GetCreateOrdering(nlohmann::json &desc)
             {
                 return CreateOrdering<TAlgebra, ordering_container_type>(desc);
+            }
+            std::tuple<MatrixOperator<typename TAlgebra::matrix_type, typename TAlgebra::vector_type>,
+                   GridFunction<ug::GridFunction<TDomain, TAlgebra>, typename TAlgebra::vector_type>,
+                   GridFunction<ug::GridFunction<TDomain, TAlgebra>, typename TAlgebra::vector_type>>
+
+            GetSolveLinearProblem(SmartPtr<DomainDiscretization<TDomain, TAlgebra>> &domainDisc,
+                           nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra> &solverutil,
+                           std::string outFilePrefix,
+                           SmartPtr<UserData<number, TDomain::dim, number>> startValueCB = nullptr) {
+                return SolveLinearProblem<TDomain,TAlgebra>(solverDesc, solverutil, startValueCB, outFilePrefix);
+            }
+            nlohmann::json
+            GetSolveLinearTimeProblem(SmartPtr<DomainDiscretization<TDomain, TAlgebra>> &domainDisc,
+                nlohmann::json &solverDesc, nlohmann::json &timeDesc, nlohmann::json &outDesc,
+                SolverUtil<TDomain, TAlgebra> &solverutil,
+                SmartPtr<UserData<number, TDomain::dim, number>> startValueCB = nullptr) {
+                return SolveLinearTimeProblem<TDomain,TAlgebra>(domainDisc, solverDesc, timeDesc, outDesc, solverutil,startValueCB);
+            }
+            nlohmann::json
+            GetSolveNonLinearTimeProblem(SmartPtr<DomainDiscretization<TDomain, TAlgebra>> &domainDisc,
+                nlohmann::json &solverDesc, nlohmann::json &timeDesc, nlohmann::json &outDesc,
+                SolverUtil<TDomain, TAlgebra> &solverutil,
+                SmartPtr<UserData<number, TDomain::dim, number>> startValueCB = nullptr) {
+                return SolveNonLinearTimeProblem<TDomain,TAlgebra>(domainDisc, solverDesc, timeDesc, outDesc, solverutil,startValueCB);
             }
         };
     } // namespace util
