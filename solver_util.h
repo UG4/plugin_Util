@@ -245,7 +245,25 @@ namespace ug
 
             return ls;
         }
-
+        
+        
+        /// @brief Assigns a debug writer to a solver if supported.
+        /// Uses GridFunctionDebugWriter which implements IVectorDebugWriter<TVector>.
+        ///
+        /// This function checks the JSON configuration for a debug specification
+        /// (under "debug" or "debugSolver") and assigns a GridFunctionDebugWriter
+        /// if debugging is enabled. If the solver object does not inherit from
+        /// VectorDebugWritingObject<TVector>, a warning is issued.
+        ///
+        /// @tparam TDomain   The domain type.
+        /// @tparam TAlgebra  The algebra type (e.g., CPUAlgebra).
+        /// @tparam TVector   The vector type (e.g., TAlgebra::vector_type).
+        /// @tparam TSolver   The solver type to which the debug writer may be attached.
+        ///
+        /// @param obj            The solver object (SmartPtr).
+        /// @param solverDesc     The JSON configuration for the solver.
+        /// @param json_defaults  Optional JSON object containing default values.
+        /// @param solverutil     Optional solver utility for component access.
         template<typename TDomain, typename TAlgebra, typename TVector, typename TSolver>
         void SetDebugWriter(SmartPtr<TSolver> obj,
                             nlohmann::json& solverDesc,
@@ -255,7 +273,6 @@ namespace ug
             // First check "debug", then fallback to "debugSolver"
             // If neither is found, check the defaults JSON if provided
             auto& desc = solverDesc;
-            //auto defaults = json_defaults;
 
             auto dbgDescIt = desc.find("debug");
             if (dbgDescIt == desc.end()){
@@ -266,7 +283,6 @@ namespace ug
                 if (defIt != json_defaults->end()){
                     dbgDescIt = desc.insert(desc.end(), *defIt);
                 }
-                //dbgDescIt = defaults->find("debug");
             }
 
             if (dbgDescIt != desc.end()){
@@ -308,7 +324,10 @@ namespace ug
                         }
 
                         if (!approxSpace){
-                            UG_THROW("An ApproximationSpace is required to create the DebugWriter.");
+                            UG_THROW("An ApproximationSpace is required to create the DebugWriter."
+                                     "Consider setting the 'approxSpace' property of of the object to debug,"
+                                     "or alternatively the util.solver.defaults.approxSpace property."
+                                     "Otherwise set util.debug_writer to your own debug writer object.");
                         }
 
                         // Create a GridFunctionDebugWriter instance using the given ApproximationSpace.
@@ -325,26 +344,19 @@ namespace ug
 
                         //SmartPtr<IDebugWriter<TVector>> dbgWriter;
                         dbgWriter = Writer.template cast_dynamic<IVectorDebugWriter<TVector>>();
-                        //dbgWriter = make_sp(new GridFunctionDebugWriter<TDomain, TAlgebra>(approxSpace))
                     }
 
                     typedef VectorDebugWritingObject<TVector> TDbgBase;
                     SmartPtr<TDbgBase> dbgObj;
                     dbgObj = obj.template cast_dynamic<TDbgBase>();
 
-
                     // Assign the debug writer to the solver object
-                    if (dbgObj.valid()) {
+                    if (dbgObj.valid()){
                         dbgObj->set_debug(dbgWriter);
-                    }
+                    } 
                     else {
                         UG_LOG("Warning: Debug writer cannot be set — solver does not inherit from VectorDebugWritingObject.\n");
                     }
-
-                    //if (dbgObj) {
-                    //    dbgObj->set_debug(dbgWriter);
-                    //obj->set_debug(dbgWriter);
-                    //preconditioner = JAC.template cast_static<TPrecond>();
                 }
             }
         }
@@ -389,11 +401,11 @@ namespace ug
                 linSolver = CG.template cast_dynamic<TReturn>();
                 // configure cg
                 precondtype = json_default_linearSolver["cg"]["precond"];
-                //UG_LOG("precondtype of cg: ");
-                //UG_LOG(precondtype << "\n");
+                // UG_LOG("precondtype of cg: ");
+                // UG_LOG(precondtype << "\n");
                 convChecktype = json_default_linearSolver["cg"]["convCheck"];
-                //UG_LOG("convChecktype of cg: ");
-                //UG_LOG(convChecktype << "\n");
+                // UG_LOG("convChecktype of cg: ");
+                // UG_LOG(convChecktype << "\n");
                 createPrecond = true;
                 createConvCheck = true;
             }
@@ -405,11 +417,11 @@ namespace ug
                 linSolver = BICGSTAB.template cast_dynamic<TReturn>();
                 // configure bicgstab
                 precondtype = json_default_linearSolver["bicgstab"]["precond"];
-                //UG_LOG("precondtype of bicgstab: ");
-                //UG_LOG(precondtype << "\n");
+                // UG_LOG("precondtype of bicgstab: ");
+                // UG_LOG(precondtype << "\n");
                 convChecktype = json_default_linearSolver["bicgstab"]["convCheck"];
-                //UG_LOG("convChecktype of bicgstab: ");
-                //UG_LOG(convChecktype << "\n");
+                // UG_LOG("convChecktype of bicgstab: ");
+                // UG_LOG(convChecktype << "\n");
                 createPrecond = true;
                 createConvCheck = true;
             }
@@ -436,13 +448,13 @@ namespace ug
                 // AgglomeratingSolver
 
             #ifdef UG_USE_SUPERLU
-                UG_LOG("CreateLinearSolver,name_lu, AgglomeratingSolver(SuperLU()) \n");
+                // UG_LOG("CreateLinearSolver,name_lu, AgglomeratingSolver(SuperLU()) \n");
                 auto SuperLU = make_sp(new AgglomeratingSolver<TAlgebra>(make_sp(new SuperLUSolver<TAlgebra>())));
                 auto test = SuperLU.template cast_dynamic<ILinearOperatorInverse<typename TAlgebra::vector_type>>();
                 linSolver = SuperLU.template cast_dynamic<TReturn>();
 
             #else
-                UG_LOG("CreateLinearSolver,name_lu, AgglomeratingSolver(LU_solver) \n");
+                // UG_LOG("CreateLinearSolver,name_lu, AgglomeratingSolver(LU_solver) \n");
                 typedef LU<TAlgebra> TLU;
                 SmartPtr<TLU> LU_solver = make_sp(new TLU());
 
@@ -463,7 +475,7 @@ namespace ug
             #endif
             }
             else if (type == "uglu"){
-                UG_LOG("CreateLinearSolver,name_uglu, AgglomeratingSolver(LU_solver) \n");
+                // UG_LOG("CreateLinearSolver,name_uglu, AgglomeratingSolver(LU_solver) \n");
                 // create LU Solver
                 typedef LU<TAlgebra> TLU;
                 SmartPtr<TLU> LU_solver = make_sp(new TLU());
@@ -484,7 +496,7 @@ namespace ug
                 linSolver = make_sp(new AgglomeratingSolver<TAlgebra>(LU_solver)).template cast_dynamic<TReturn>();
             }
             else if (type == "superlu"){
-                UG_LOG("CreateLinearSolver,name_superlu, AgglomeratingSolver(SuperLU()) \n");
+                // UG_LOG("CreateLinearSolver,name_superlu, AgglomeratingSolver(SuperLU()) \n");
                 // create SuperLU Solver
                 typedef SuperLUSolver<TAlgebra> TSupLUSolv;
                 SmartPtr<TSupLUSolv> superlu = make_sp(new TSupLUSolv());
@@ -539,8 +551,8 @@ namespace ug
                 else{
                     UG_LOG(">> CreateLinearSolver, solverDesc must be a string or an object \n");
                 }
-                //UG_LOG("CreateLinearSolver, precondDesc: \n");
-                //UG_LOG(precondDesc.dump(4) << "\n");
+                // UG_LOG("CreateLinearSolver, precondDesc: \n");
+                // UG_LOG(precondDesc.dump(4) << "\n");
                 
                 SmartPtr<ILinearIterator<typename TAlgebra::vector_type>> 
                 preconditioner = CreatePreconditioner(precondDesc, solverutil);
@@ -560,8 +572,8 @@ namespace ug
                 else{
                     UG_LOG(">> CreateLinearSolver, convCheckDesc must be a string or an object \n");
                 }
-                //UG_LOG("CreateLinearSolver, convCheckDesc: \n");
-                //UG_LOG(convCheckDesc.dump(4) << "\n");
+                // UG_LOG("CreateLinearSolver, convCheckDesc: \n");
+                // UG_LOG(convCheckDesc.dump(4) << "\n");
                 SmartPtr<StdConvCheck<TVector>> convCheck = CreateConvCheck<TAlgebra>(convCheckDesc);
                 linSolver->set_convergence_check(convCheck);
             }
@@ -613,8 +625,8 @@ namespace ug
                         linSolverDesc = json_default_nonlinearSolver["newton"]["linSolver"];
                     }
                 }
-                //UG_LOG("CreateNewtonSolver, linSolverDesc:\n");
-                //UG_LOG(linSolverDesc.dump(4) << "\n");
+                // UG_LOG("CreateNewtonSolver, linSolverDesc:\n");
+                // UG_LOG(linSolverDesc.dump(4) << "\n");
 
                 SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>> linSolver;
                 linSolver = CreateLinearSolver(linSolverDesc, solverutil);
@@ -623,8 +635,8 @@ namespace ug
                 // convergence check
                 std::string convCheckType = json_default_nonlinearSolver["newton"]["convCheck"];
                 nlohmann::json convCheckDesc;
-                //UG_LOG("convCheck json default: ");
-                //UG_LOG(convCheckType << "\n");
+                // UG_LOG("convCheck json default: ");
+                // UG_LOG(convCheckType << "\n");
 
                 // get descriptor for convergence check
                 if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_string()){
@@ -633,7 +645,7 @@ namespace ug
                 }
                 else if (solverDesc.contains("convCheck") && solverDesc["convCheck"].is_object()){
                     convCheckDesc = solverDesc["convCheck"];
-                    //UG_LOG(convCheckDesc.dump(4) << "\n");
+                    // UG_LOG(convCheckDesc.dump(4) << "\n");
                 }
                 else{
                     UG_LOG(">> CreateNewtonSolver, convCheckDesc must be a string or an object \n")
@@ -656,7 +668,7 @@ namespace ug
                 }
                 else if (solverDesc.contains("lineSearch") && solverDesc["lineSearch"].is_object()){
                     lineSearchDesc = solverDesc["lineSearch"];
-                    //UG_LOG(lineSearchDesc.dump(4) << "\n");
+                    // UG_LOG(lineSearchDesc.dump(4) << "\n");
                 }
                 else{
                     UG_LOG(">> LineSearchDesc was not a string or an object, defaults are taken. \n")
@@ -911,7 +923,7 @@ namespace ug
             else if (type == "ssc"){
                 UG_LOG("CreatePreconditioner SequentialSubspaceCorrection \n");
                 typedef SequentialSubspaceCorrection<TDomain, TAlgebra> TSSC;
-                //number relax = 1.0;
+                // number relax = 1.0;
                 number damping = 1.0;
                 if (json_default_preconds.contains("ssc") && json_default_preconds["ssc"].contains("damping")){
                     damping = json_default_preconds["ssc"]["damping"];
@@ -1139,8 +1151,6 @@ namespace ug
                 SmartPtr<TSchur> schur = make_sp(new TSchur());
 
                 // load defaults
-                nlohmann::json json_default_preconds = json_predefined_defaults::solvers["preconditioner"];
-
                 std::string dirichletSolverType = json_default_preconds["schur"]["dirichletSolver"];
                 std::string skeletonSolverType = json_default_preconds["schur"]["skeletonSolver"];
 
@@ -1351,9 +1361,79 @@ namespace ug
             return debugger;
         }
 
+        /// @brief Prepares a solution step, e.g. during nested iterations.
+        ///
+        /// This function updates convergence check settings depending on the current
+        /// nested iteration step and time step
+        /// and applies them to the corresponding instances (identified by "instance" strings)
+        /// previously registered in the SolverUtil.
+        ///
+        /// @tparam TDomain   Domain type
+        /// @tparam TAlgebra  Algebra type
+        /// @tparam TVector   Vector type
+        /// @param solverDesc      JSON config (must contain a "convCheckDescs" array or be the descriptor itself)
+        /// @param solverutil      Access to convergence check components
+        /// @param nestedStep      Optional nested iteration step (default: 1)
+        /// @param timeStep        Optional time step (default: 1)
+        template<typename TDomain, typename TAlgebra, typename TVector>
+        void PrepareStep(nlohmann::json& solverDesc,
+                         const SolverUtil<TDomain, TAlgebra>& solverutil,
+                         int nestedStep = 1,
+                         int timeStep = 1){
+            // Determine the list of convergence check descriptors
+            auto& desc = solverDesc;
 
+            nlohmann::json convCheckDescs;
 
+            if (desc.contains("solverutil") && desc["solverutil"].contains("convCheckDescs")){
+                convCheckDescs = desc["solverutil"]["convCheckDescs"];
+            }
+            else if (desc.contains("convCheckDescs")){
+                convCheckDescs = desc["convCheckDescs"];
+            }
+            else{
+                convCheckDescs = desc;
+            }
 
+            // Must be array of objects
+            if (!convCheckDescs.is_array()) return;
+
+            for (const auto& ccDesc : convCheckDescs){
+                if (!ccDesc.contains("instance")) continue;
+
+                std::string instanceName = ccDesc["instance"];
+
+                if (!solverutil.hasComponent(instanceName)){
+                    UG_LOG("PrepareStep: No convergence check instance named '" << instanceName << "' found.\n");
+                    continue;
+                }
+
+                SmartPtr<IConvergenceCheck<TVector>> cc =
+                    solverutil.template getComponentAs<IConvergenceCheck<TVector>>(instanceName);
+
+                // Iterate over possible sub-tables inside the descriptor
+                for (const auto& d : ccDesc.items()){
+                    if (!d.value().is_object()) continue;
+
+                    const auto& sub = d.value();
+
+                    // Apply settings only if nestedStep/timeStep match (or not specified)
+                    bool stepMatch = (!sub.contains("nestedStep") || sub["nestedStep"] == nestedStep) &&
+                                     (!sub.contains("timeStep")   || sub["timeStep"] == timeStep);
+
+                    if (!stepMatch) continue;
+
+                    if (sub.contains("iterations"))
+                        cc->set_maximum_steps(sub["iterations"]);
+                    if (sub.contains("absolute"))
+                        cc->set_minimum_defect(sub["absolute"]);
+                    if (sub.contains("reduction"))
+                        cc->set_reduction(sub["reduction"]);
+                    if (sub.contains("verbose"))
+                        cc->set_verbose(sub["verbose"]);
+                }
+            }
+        }
 
         /*
          * Helper class to provide c++ util functions in lua.
