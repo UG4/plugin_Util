@@ -255,24 +255,28 @@ namespace ug
             // First check "debug", then fallback to "debugSolver"
             // If neither is found, check the defaults JSON if provided
             auto& desc = solverDesc;
-            auto defaults = json_defaults;
+            //auto defaults = json_defaults;
 
             auto dbgDescIt = desc.find("debug");
             if (dbgDescIt == desc.end()){
                 dbgDescIt = desc.find("debugSolver");
             }
-            if (dbgDescIt == desc.end() && defaults){
-                dbgDescIt = defaults->find("debug");
+            if (dbgDescIt == desc.end() && json_defaults){
+                auto defIt = json_defaults->find("debug");
+                if (defIt != json_defaults->end()){
+                    dbgDescIt = desc.insert(desc.end(), *defIt);
+                }
+                //dbgDescIt = defaults->find("debug");
             }
 
             if (dbgDescIt != desc.end()){
                 const auto& dbgDesc = *dbgDescIt;
-
+                
                 // Default flags for debugging output
                 bool debug = false;
                 bool vtk = true;
                 bool conn_viewer = false;
-
+                
                 // Checks the type
                 if (dbgDesc.is_boolean()){
                     debug = dbgDesc.get<bool>();
@@ -285,11 +289,11 @@ namespace ug
                 else {
                     UG_THROW("Unrecognized type of debug writer specification.");
                 }
-
+                
                 // If debugging is enabled, set up the debug writer
                 if (debug){
                     SmartPtr<IVectorDebugWriter<TVector>> dbgWriter;
-
+                    
                     // Use debug writer from solverutil if available
                     if (solverutil && solverutil->hasComponent("debug")){
                         auto rawDbg = solverutil->template getComponentAs<GridFunctionDebugWriter<TDomain, TAlgebra>>("debug");
@@ -314,16 +318,33 @@ namespace ug
                         typedef GridFunctionDebugWriter<TDomain, TAlgebra> TWriter;
                         SmartPtr<TWriter> Writer;
                         Writer = make_sp(new TWriter(approxSpace));
-                        //SmartPtr<IDebugWriter<TVector>> dbgWriter;
-                        dbgWriter = Writer.template cast_dynamic<IVectorDebugWriter<TVector>>();
-                        //dbgWriter = make_sp(new GridFunctionDebugWriter<TDomain, TAlgebra>(approxSpace));
 
                         // Configure output options
-                        dbgWriter->set_vtk_output(vtk);
-                        dbgWriter->set_conn_viewer_output(conn_viewer);
+                        Writer->set_vtk_output(vtk);
+                        Writer->set_conn_viewer_output(conn_viewer);
+
+                        //SmartPtr<IDebugWriter<TVector>> dbgWriter;
+                        dbgWriter = Writer.template cast_dynamic<IVectorDebugWriter<TVector>>();
+                        //dbgWriter = make_sp(new GridFunctionDebugWriter<TDomain, TAlgebra>(approxSpace))
                     }
+
+                    typedef VectorDebugWritingObject<TVector> TDbgBase;
+                    SmartPtr<TDbgBase> dbgObj;
+                    dbgObj = obj.template cast_dynamic<TDbgBase>();
+
+
                     // Assign the debug writer to the solver object
-                    obj->set_debug(dbgWriter);
+                    if (dbgObj.valid()) {
+                        dbgObj->set_debug(dbgWriter);
+                    }
+                    else {
+                        UG_LOG("Warning: Debug writer cannot be set — solver does not inherit from VectorDebugWritingObject.\n");
+                    }
+
+                    //if (dbgObj) {
+                    //    dbgObj->set_debug(dbgWriter);
+                    //obj->set_debug(dbgWriter);
+                    //preconditioner = JAC.template cast_static<TPrecond>();
                 }
             }
         }
@@ -483,7 +504,7 @@ namespace ug
             }
             else {
                 UG_LOG("*** no descriptor is given, create default linear solver *** \n");
-
+                
                 SmartPtr<ILU<TAlgebra>> ilu = make_sp<ILU<TAlgebra>>(new ILU<TAlgebra>());
                 SmartPtr<StdConvCheck<TVector>> convCheck = make_sp<StdConvCheck<TVector>>(
                     new StdConvCheck<TVector>(100, 1e-9, 1e-12));
@@ -492,7 +513,7 @@ namespace ug
                 default_linear_solver->set_preconditioner(ilu);
                 return default_linear_solver;
             }
-
+            
             // Checks for a valid solver
             CondAbort(linSolver.invalid(), "Invalid linear solver specified: " + type);
 
