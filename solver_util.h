@@ -122,7 +122,7 @@ namespace ug
             SmartPtr<NewtonSolver<TAlgebra>>,
             SmartPtr<IAssemble<TAlgebra>>,
             SmartPtr<AssembledMultiGridCycle<TDomain, TAlgebra>>,
-            SmartPtr<ug::GridFunctionDebugWriter<TDomain, TAlgebra>>,
+            SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>>,
             SmartPtr<LinearSolver<typename TAlgebra::vector_type>>,
             SmartPtr<CG<typename TAlgebra::vector_type>>,
             SmartPtr<BiCGStab<typename TAlgebra::vector_type>>,
@@ -359,7 +359,20 @@ namespace ug
                 }
             }
         }
-
+        
+        /// @brief Creates and configures a linear solver based on JSON settings.
+        ///
+        /// This factory function constructs an ILinearOperatorInverse<TVector> solver,
+        /// sets up its preconditioner, convergence check, and optional debugging,
+        /// using both user-specified and default JSON configurations.
+        ///
+        /// @tparam TDomain   The domain type used for ApproximationSpace retrieval.
+        /// @tparam TAlgebra  The algebra type defining vector/matrix operations.
+        ///
+        /// @param solverDesc     JSON object with solver settings ("type", "precond", "convCheck", "debug", etc.).
+        /// @param solverutil     SolverUtil container providing shared components (ApproximationSpace, etc.).
+        ///
+        /// @returns A SmartPtr to the configured ILinearOperatorInverse<TVector> solver.
         template<typename TDomain, typename TAlgebra>
         SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>>
         CreateLinearSolver(nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra> &solverutil){
@@ -576,13 +589,36 @@ namespace ug
                 SmartPtr<StdConvCheck<TVector>> convCheck = CreateConvCheck<TAlgebra>(convCheckDesc);
                 linSolver->set_convergence_check(convCheck);
             }
-
-            // TODO: SetDebugWriter(linSolver, solverDesc, defaults, solverutil)
-
+            // SetDebugWriter
+            using Dom = TDomain;
+            using Alg = TAlgebra;
+            using Vec = TVector;
+            using Lin = TReturn;
+            SetDebugWriter<Dom, Alg, Vec, Lin>(
+                          linSolver, 
+                          solverDesc, 
+                          &json_default_linearSolver, 
+                          &solverutil
+            );
             return linSolver;
         }
 
 
+        /// @brief Constructs and configures a Newton nonlinear solver based on JSON settings.
+        ///
+        /// This factory function builds a NewtonSolver<TAlgebra> instance with:
+        ///  - A linear solver created via CreateLinearSolver
+        ///  - A convergence check created via CreateConvCheck
+        ///  - An optional line search created via CreateLineSearch
+        ///  - An attached debug writer via SetDebugWriter
+        ///
+        /// @tparam TDomain   The domain type, used for retrieving ApproximationSpace.
+        /// @tparam TAlgebra  The algebra type, defining vector operations.
+        ///
+        /// @param solverDesc  JSON configuration for the nonlinear solver ("type", "linSolver", "convCheck", "lineSearch", "debug", etc.).
+        /// @param solverutil  SolverUtil container providing shared components like ApproximationSpace.
+        ///
+        /// @returns A SmartPtr to the configured NewtonSolver<TAlgebra>.
         template<typename TDomain, typename TAlgebra>
         SmartPtr<NewtonSolver<TAlgebra>>
         CreateNewtonSolver(nlohmann::json &solverDesc, SolverUtil<TDomain, TAlgebra> &solverutil){
@@ -683,12 +719,17 @@ namespace ug
                 if (solverDesc.contains("reassemble_J_freq") && solverDesc["reassemble_J_freq"].is_number()){
                     newtonSolver->set_reassemble_J_freq(solverDesc["reassemble_J_freq"]);
                 }
-
+                // SetDebugWriter
                 using Dom = TDomain;
                 using Alg = TAlgebra;
                 using Vec = typename TAlgebra::vector_type;
                 using Newt = NewtonSolver<TAlgebra>;
-                ug::Util::SetDebugWriter<Dom, Alg, Vec, Newt>(newtonSolver, solverDesc, &json_default_nonlinearSolver, &solverutil);
+                SetDebugWriter<Dom, Alg, Vec, Newt>(
+                              newtonSolver, 
+                              solverDesc, 
+                              &json_default_nonlinearSolver, 
+                              &solverutil
+                );
                 return newtonSolver;
             }
             UG_THROW("CreateNewtonSolver: Only 'newton' solver type is supported in this function.")
@@ -812,8 +853,7 @@ namespace ug
             // TODO: ordering = CreateOrdering
             // TODO: precond.set_ordering_algorithm(ordering)
 
-            else if (type == "jac")
-            {
+            else if (type == "jac"){
                 UG_LOG("CreatePreconditioner jacobi \n")
                 typedef Jacobi<TAlgebra> TJAC;
                 SmartPtr<TJAC> JAC = make_sp(new TJAC());
@@ -1206,7 +1246,21 @@ namespace ug
             if (solverutil.contains("ApproxSpace")){
                 solv_util->setComponent("ApproxSpace", solverutil["ApproxSpace"]);
             }
+            if (solverutil.contains("convCheckDescs") && solverutil["convCheckDescs"].is_array()){
+                for (const auto &ccDesc : solverutil["convCheckDescs"]){
+                    if (!ccDesc.contains("instance")) continue;
+                    std::string instanceName = ccDesc["instance"];
+
+                    SmartPtr<IConvergenceCheck<typename TAlgebra::vector_type>> cc =
+                        CreateConvCheck<TAlgebra>(ccDesc);
+
+                    // Store it under its instance name for later use in PrepareStep
+                    solv_util->setComponent(instanceName, cc);
+                }
+            }
         }
+        
+      
         typedef std::vector<size_t> ordering_container_type;
         template <typename TDomain, typename TAlgebra>
         SmartPtr<IOrderingAlgorithm<TAlgebra, ordering_container_type>>
