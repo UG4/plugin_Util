@@ -36,11 +36,10 @@ function util.test.CreateLinearSolver(descriptor, solverutil)
     local jsondesc = JSON()
     local json_util = JSON()
     JSON_parse(jsondesc, util.json.encode(descriptor))
-    --JSON_parse(json_util, util.json.encode(solverutil))
-    local solverut = SolverUtil()
+    
     print("function provider_CreateLinearSolver")
     local functionProvider = SolverUtilFunctionProvider()
-    local solver = functionProvider:CreateLinearSolver(jsondesc, solverut)
+    local solver = functionProvider:CreateLinearSolver(jsondesc, solverutil)
     print(solver:config_string())
     return solver
 end
@@ -49,11 +48,10 @@ function util.test.CreateNewtonSolver(descriptor, solverutil)
     local jsondesc = JSON()
     local json_util = JSON()
     JSON_parse(jsondesc, util.json.encode(descriptor))
-    --JSON_parse(json_util, util.json.encode(solverutil))
-    local solverut = SolverUtil()
+    
     print("function provider_CreateNewtonSolver")
     local functionProvider = SolverUtilFunctionProvider()
-    local solver = functionProvider:CreateNewtonSolver(jsondesc, solverut)
+    local solver = functionProvider:CreateNewtonSolver(jsondesc, solverutil)
     print(solver:config_string())
     return solver
 end
@@ -73,7 +71,7 @@ function util.test.CreatePreconditioner(desc, solverutil)
     local jsondesc = JSON()
     JSON_parse(jsondesc, util.json.encode(desc))
     --print("|"..JSON_dump(jsondesc).."|")
-    -- local solverut = SolverUtil()
+    
     print("create function provider")
     local functionProvider = SolverUtilFunctionProvider()
     local precond = functionProvider:CreatePreconditioner(jsondesc, solverutil)
