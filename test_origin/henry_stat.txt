@@ -1,0 +1,275 @@
+********************************************************************************
+* ugshell - ug4.0.2, head revision 'unknown',                                  *
+*                    compiled 'Mi 1. Okt 12:59:17 CEST 2025'                   *
+*                    on 'myrtopap-HP-Laptop-17-cn3xxx' (DEBUG).                *
+*                                                                              *
+* arguments:                                                                   *
+*   -outproc id:         Sets the output-proc to id. Default is 0.             *
+*   -ex scriptname:      Executes the specified script.                        *
+*   -noquit:             Runs the interactive shell after specified script.    *
+*   -quiet:              Disables printing of header and trailer.              *
+*   -help:               Print this help message and exit.                     *
+*   -noterm:             Terminal logging will be disabled.                    *
+*   -logtofile filename: Output will be written to the specified file.         *
+*   -call:               Combines all following arguments to one lua command   *
+*                        and executes it. Ignored if it follows '-ex'.         *
+*                        '(', ')', and '"' have to be escaped, e.g.: '\('      *
+* Additional parameters are passed to the script through ugargc and ugargv.    *
+*                                                                              *
+* Initializing: paths... done, bridge... Adding ConvCheckBuilderCPU1
+Adding ConvCheckBuilderCPU2
+Adding ConvCheckBuilderCPU3
+Adding JacobiBuilderCPU1
+Adding GaussSeidelBuilderCPU1
+Adding SymmetricGaussSeidelBuilderCPU1
+Adding BackwardGaussSeidelBuilderCPU1
+Adding JacobiBuilderCPU2
+Adding GaussSeidelBuilderCPU2
+Adding SymmetricGaussSeidelBuilderCPU2
+Adding BackwardGaussSeidelBuilderCPU2
+Adding JacobiBuilderCPU3
+Adding GaussSeidelBuilderCPU3
+Adding SymmetricGaussSeidelBuilderCPU3
+Adding BackwardGaussSeidelBuilderCPU3
+Adding VTKOutputBuilder1d
+Adding VTKOutputBuilder2d
+Adding VTKOutputBuilder3d
+done, plugins... done                 *
+********************************************************************************
+--------------------------------------------------------------------------------
+Build configuration:
+
+1. Primary 'cmake' parameters:
+TARGET:            ugshell              STATIC:            OFF                  
+PARALLEL:          ON                   PCL_DEBUG_BARRIER: OFF                  
+DEBUG:             ON                   DEBUG_LOGS:        ON                   
+PROFILER:          OFF                  PROFILE_PCL:       OFF                  
+LAPACK available:  NO                   BLAS   available:  NO                   
+DIM:               ALL
+CPU:               1 2 3                
+2. External libraries:
+TETGEN:            OFF                  HYPRE:             OFF                  
+HLIBPRO:           OFF                                                          
+--------------------------------------------------------------------------------
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/ConvectionDiffusion/lua/lua-include.lua
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/JSONToolkit/lua/lua-include.lua
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/Util/lua/lua-include.lua
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/Limex/lua/lua-include.lua
+LIMEX-Plugin: Loading util.limex.*
+Loading Domain grids/henry_quad_2x1.ugx ... done.
+Performing integrity check on domain ... done.
+Refining(3): 1 2 3 done.
+Domain info:
+  lvl   #total-elems   #local-elems   (% of total)   #local-ghosts   #min-local-elems   #max-local-elems   #surf-elems  
+  0     2              2              100            0               2                  2                  -            
+  1     8              8              100            0               8                  8                  -            
+  2     32             32             100            0               32                 32                 -            
+  3     128            128            100            0               128                128                -            
+  4     512            512            100            0               512                512                -            
+  5     2048           2048           100            0               2048               2048               -            
+  6     8192           8192           100            0               8192               8192               -            
+  7     32768          32768          100            0               32768              32768              32768        
+
+---> DoF statistics:
+| -------------------------------------------------------------------------------------------------------- |
+|  Number of DoFs (All Procs)                                                                              |
+|  Algebra: Block 2 (divide by 2 for #Index)                                                               |
+|                                                                                                          |
+|    GridLevel   |       Domain |    0: Medium |       1: Top |    2: Bottom |       3: Sea |    4: Inflow |
+| -------------------------------------------------------------------------------------------------------- |
+| (lev,    0)    |           12 |            0 |            2 |            2 |            4 |            4 |
+| (lev,    1)    |           30 |            6 |            6 |            6 |            6 |            6 |
+| (lev,    2)    |           90 |           42 |           14 |           14 |           10 |           10 |
+| (lev,    3)    |          306 |          210 |           30 |           30 |           18 |           18 |
+| (lev,    4)    |         1122 |          930 |           62 |           62 |           34 |           34 |
+| (lev,    5)    |         4290 |         3906 |          126 |          126 |           66 |           66 |
+| (lev,    6)    |        16770 |        16002 |          254 |          254 |          130 |          130 |
+| (lev,    7)    |        66306 |        64770 |          510 |          510 |          258 |          258 |
+| (lev,    0, g) |           12 |            0 |            2 |            2 |            4 |            4 |
+| (lev,    1, g) |           30 |            6 |            6 |            6 |            6 |            6 |
+| (lev,    2, g) |           90 |           42 |           14 |           14 |           10 |           10 |
+| (lev,    3, g) |          306 |          210 |           30 |           30 |           18 |           18 |
+| (lev,    4, g) |         1122 |          930 |           62 |           62 |           34 |           34 |
+| (lev,    5, g) |         4290 |         3906 |          126 |          126 |           66 |           66 |
+| (lev,    6, g) |        16770 |        16002 |          254 |          254 |          130 |          130 |
+| (lev,    7, g) |        66306 |        64770 |          510 |          510 |          258 |          258 |
+| (surf, top)    |        66306 |        64770 |          510 |          510 |          258 |          258 |
+| -------------------------------------------------------------------------------------------------------- |
+| For Legend and Options: print_statistic("legend").                                                       |
+| -------------------------------------------------------------------------------------------------------- |
+OrderLex: LexOrdering in +y direction.
+
+ILU: please use 'set_ordering_algorithm(..)' in the future
+===> Computation of the initial guess for the pressure <===
+
+   # ########        Newton Solver        #################
+   # ########  (Linear Solver: BiCGStab)  #################
+   #   Iter      Defect         Rate 
+   #    0:    4.449172e-02      -------
+after COLAMD_MAIN info 1
+
+      % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+      % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+      %   Iter      Defect         Rate 
+      %    0:    4.449172e-02      -------
+      %    1:    2.276852e-04    5.117473e-03
+      %    2:    9.907405e-06    4.351361e-02
+      %    3:    5.877162e-07    5.932090e-02
+      % Relative reduction 1.000000e-04 reached after 3 steps.
+      % Average reduction over 3 steps: 2.363902e-02
+      % %%%%%  Iteration converged  %%%%%
+
+   #     ++++ Line Search:
+   +  Iter       lambda        Defect          Rate 
+   #     +    1:             1     5.877162e-07   1.320956e-05
+   #     ++++ Line Search converged.
+   #    1:    5.877162e-07    1.320956e-05
+after COLAMD_MAIN info 1
+
+      % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+      % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+      %   Iter      Defect         Rate 
+      %    0:    5.877162e-07      -------
+      %    1:    1.717961e-08    2.923114e-02
+      %    2:    8.961712e-10    5.216480e-02
+      %    3:    6.217944e-11    6.938344e-02
+      % Absolute defect norm 5.000000e-10 reached after 3 steps.
+      % Average reduction over 3 steps: 4.729621e-02
+      % %%%%%  Iteration converged  %%%%%
+
+   #     ++++ Line Search:
+   +  Iter       lambda        Defect          Rate 
+   #     +    1:             1     6.218139e-11   1.058017e-04
+   #     ++++ Line Search converged.
+   #    2:    6.218139e-11    1.058017e-04
+   # Absolute defect norm 1.000000e-09 reached after 2 steps.
+   # Relative reduction 1.000000e-06 reached after 2 steps.
+   # Average reduction over 2 steps: 3.738442e-05
+   # #####  Iteration converged  #####
+
+===> Computation of the solution of the problem <===
+
+   # ########        Newton Solver        #################
+   # ########  (Linear Solver: BiCGStab)  #################
+   #   Iter      Defect         Rate 
+   #    0:    8.066823e-02      -------
+after COLAMD_MAIN info 1
+
+      % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+      % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+      %   Iter      Defect         Rate 
+      %    0:    8.066823e-02      -------
+      %    1:    1.559077e-03    1.932703e-02
+      %    2:    7.675137e-04    4.922871e-01
+      %    3:    6.883519e-04    8.968594e-01
+      %    4:    2.179989e-04    3.166969e-01
+      %    5:    1.229876e-04    5.641662e-01
+      %    6:    3.927035e-05    3.193033e-01
+      %    7:    6.460152e-05    1.645046e+00
+      %    8:    3.771362e-05    5.837884e-01
+      %    9:    5.544955e-06    1.470279e-01
+      % Relative reduction 1.000000e-04 reached after 9 steps.
+      % Average reduction over 9 steps: 3.447198e-01
+      % %%%%%  Iteration converged  %%%%%
+
+   #     ++++ Line Search:
+   +  Iter       lambda        Defect          Rate 
+   #     +    1:             1     6.963355e-03   8.632091e-02
+   #     ++++ Line Search converged.
+   #    1:    6.963355e-03    8.632091e-02
+after COLAMD_MAIN info 1
+
+      % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+      % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+      %   Iter      Defect         Rate 
+      %    0:    6.963355e-03      -------
+      %    1:    3.201137e-04    4.597118e-02
+      %    2:    1.594709e-04    4.981697e-01
+      %    3:    1.098292e-04    6.887100e-01
+      %    4:    6.961441e-05    6.338424e-01
+      %    5:    5.502733e-05    7.904589e-01
+      %    6:    2.895899e-05    5.262656e-01
+      %    7:    3.227934e-03    1.114657e+02
+      %    8:    7.148884e-04    2.214693e-01
+      %    9:    6.782905e-06    9.488062e-03
+      %   10:    2.277082e-06    3.357090e-01
+      %   11:    1.346136e-06    5.911668e-01
+      %   12:    6.057798e-07    4.500139e-01
+      % Relative reduction 1.000000e-04 reached after 12 steps.
+      % Average reduction over 12 steps: 4.588014e-01
+      % %%%%%  Iteration converged  %%%%%
+
+   #     ++++ Line Search:
+   +  Iter       lambda        Defect          Rate 
+   #     +    1:             1     3.818910e-04   5.484296e-02
+   #     ++++ Line Search converged.
+   #    2:    3.818910e-04    5.484296e-02
+after COLAMD_MAIN info 1
+
+      % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+      % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+      %   Iter      Defect         Rate 
+      %    0:    3.818910e-04      -------
+      %    1:    2.636816e-05    6.904632e-02
+      %    2:    1.141210e-05    4.327984e-01
+      %    3:    8.011217e-06    7.019933e-01
+      %    4:    4.052212e-06    5.058173e-01
+      %    5:    2.339569e-06    5.773559e-01
+      %    6:    1.705300e-06    7.288950e-01
+      %    7:    2.425068e-05    1.422077e+01
+      %    8:    3.978725e-06    1.640666e-01
+      %    9:    4.352087e-07    1.093840e-01
+      %   10:    3.129242e-07    7.190211e-01
+      %   11:    5.983931e-08    1.912262e-01
+      %   12:    3.084031e-08    5.153854e-01
+      % Relative reduction 1.000000e-04 reached after 12 steps.
+      % Average reduction over 12 steps: 4.559651e-01
+      % %%%%%  Iteration converged  %%%%%
+
+   #     ++++ Line Search:
+   +  Iter       lambda        Defect          Rate 
+   #     +    1:             1     9.224801e-07   2.415559e-03
+   #     ++++ Line Search converged.
+   #    3:    9.224801e-07    2.415559e-03
+after COLAMD_MAIN info 1
+
+      % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+      % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+      %   Iter      Defect         Rate 
+      %    0:    9.224801e-07      -------
+      %    1:    2.471561e-07    2.679257e-01
+      %    2:    1.283922e-07    5.194779e-01
+      %    3:    8.296003e-08    6.461456e-01
+      %    4:    5.585902e-08    6.733245e-01
+      %    5:    3.812790e-08    6.825738e-01
+      %    6:    2.857250e-08    7.493856e-01
+      %    7:    2.281953e-08    7.986535e-01
+      %    8:    1.550723e-08    6.795599e-01
+      %    9:    1.967576e-08    1.268812e+00
+      %   10:    6.734480e-09    3.422729e-01
+      %   11:    6.574836e-09    9.762945e-01
+      %   12:    2.789795e-09    4.243140e-01
+      %   13:    7.703383e-09    2.761272e+00
+      %   14:    1.652646e-09    2.145351e-01
+      %   15:    1.400832e-09    8.476294e-01
+      %   16:    1.040526e-09    7.427918e-01
+      %   17:    8.058775e-10    7.744902e-01
+      %   18:    1.471620e-10    1.826109e-01
+      % Absolute defect norm 5.000000e-10 reached after 18 steps.
+      % Average reduction over 18 steps: 6.152429e-01
+      % %%%%%  Iteration converged  %%%%%
+
+   #     ++++ Line Search:
+   +  Iter       lambda        Defect          Rate 
+   #     +    1:             1     4.761789e-10   5.161943e-04
+   #     ++++ Line Search converged.
+   #    4:    4.761789e-10    5.161943e-04
+   # Absolute defect norm 1.000000e-09 reached after 4 steps.
+   # Relative reduction 1.000000e-06 reached after 4 steps.
+   # Average reduction over 4 steps: 8.765303e-03
+   # #####  Iteration converged  #####
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+
+
