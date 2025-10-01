@@ -677,7 +677,7 @@ namespace ug
                 convCheck = CreateConvCheck<TAlgebra>(convCheckDesc);
                 newtonSolver->set_convergence_check(convCheck);
 
-                // line search
+                // line search json default
                 nlohmann::json lineSearchDesc;
                 std::string lineSearchType;
                 
@@ -688,30 +688,35 @@ namespace ug
                     lineSearchDesc = json_default_nonlinearSolver["newton"]["lineSearch"];
                 }
                 else
-                    UG_LOG(">> LineSearchDesc is null \n")
+                    UG_LOG(">> LineSearchDesc in json_defaults is null \n")
                 
                 // get descriptor for line search
                 if (solverDesc.contains("lineSearch") && solverDesc["lineSearch"].is_string()){
+                    // UG_LOG(">> LineSearchDesc is a string from solverDesc\n");
                     lineSearchType = solverDesc["lineSearch"];
                     lineSearchDesc["type"] = lineSearchType;
                 }
                 else if (solverDesc.contains("lineSearch") && solverDesc["lineSearch"].is_object()){
+                    // UG_LOG(">> LineSearchDesc is an object from solverDesc\n");
                     lineSearchDesc = solverDesc["lineSearch"];
                 }
                 else{
-                    UG_LOG(">> LineSearchDesc for NewtonSolver, default is null \n");
+                    UG_LOG(">> LineSearchDesc for NewtonSolver, default in desc is null \n");
                 }
-                    
+                 
                 // if line_Search not null
-                if (!lineSearchType.empty() && lineSearchType != "none"){
+                if (!lineSearchDesc.empty() && lineSearchDesc != "none"){
                     SmartPtr<StandardLineSearch<typename TAlgebra::vector_type>> lineSearch;
+                    std::cout << "[DEBUG] input to CreateLineSearch:\n" << solverDesc.dump(4) << std::endl;
                     lineSearch = CreateLineSearch<TAlgebra>(lineSearchDesc);
                     newtonSolver->set_line_search(lineSearch);
                 }
+                
                 // set reassemble_J_freq if exists
                 if (solverDesc.contains("reassemble_J_freq") && solverDesc["reassemble_J_freq"].is_number()){
                     newtonSolver->set_reassemble_J_freq(solverDesc["reassemble_J_freq"]);
                 }
+                
                 // SetDebugWriter
                 using Dom = TDomain;
                 using Alg = TAlgebra;
