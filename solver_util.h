@@ -1748,7 +1748,7 @@ namespace ug
                 return CreatePreconditioner<TDomain, TAlgebra>(desc, solverutil);
             }
 
-            SmartPtr<ILinearOperatorInverse<typename TAlgebra::vector_type>>
+            SmartPtr<ILinearIterator<typename TAlgebra::vector_type>>
             GetCreateLinearSolver(nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
                 return CreateLinearSolver<TDomain, TAlgebra>(desc, solverutil);
             }
