@@ -4,6 +4,7 @@ ug_load_script("externals/JSONForUG4/json-lua/json.lua")
 util = util or {}
 util.test = util.test or {}
 
+
 function util.test.CreateConvCheck(convCheckDesc, solverutil)
 
     -- create JSON object
@@ -21,7 +22,6 @@ function util.test.CreateConvCheck(convCheckDesc, solverutil)
     local descriptor=JSON();
     local json_util = JSON();
     JSON_parse(descriptor, util.json.encode(convCheckDesc))
-    JSON_parse(json_util, util.json.encode(solverutil))
     print("|"..JSON_dump(descriptor).."|")
     validator:validate_document(descriptor)
 
@@ -50,6 +50,7 @@ function util.test.CreateNewtonSolver(descriptor, solverutil)
     JSON_parse(jsondesc, util.json.encode(descriptor))
     
     print("function provider_CreateNewtonSolver")
+    local solverutil = SolverUtil()
     local functionProvider = SolverUtilFunctionProvider()
     local solver = functionProvider:CreateNewtonSolver(jsondesc, solverutil)
     print(solver:config_string())
