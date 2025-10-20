@@ -19,10 +19,10 @@
 #include "../../ugcore/ugbase/lib_disc/function_spaces/grid_function_util.h"
 #include "lib_algebra/operator/convergence_check.h"
 #include "lib_algebra/operator/linear_solver/linear_solver.h"
-#include "lib_algebra/ordering_strategies/algorithms/boost_cuthill_mckee_ordering.cpp"
-#include "lib_algebra/ordering_strategies/algorithms/boost_minimum_degree_ordering.cpp"
-#include "lib_algebra/ordering_strategies/algorithms/SCC_ordering.cpp"
-#include "lib_algebra/ordering_strategies/algorithms/topological_ordering.cpp"
+#include "lib_algebra/ordering_strategies/algorithms/boost_cuthill_mckee_ordering.h"
+#include "lib_algebra/ordering_strategies/algorithms/boost_minimum_degree_ordering.h"
+#include "lib_algebra/ordering_strategies/algorithms/SCC_ordering.h"
+#include "lib_algebra/ordering_strategies/algorithms/topological_ordering.h"
 #include "lib_disc/ordering_strategies/algorithms/lexorder.h"
 #include "lib_disc/ordering_strategies/algorithms/riverorder.h"
 // include solver components
@@ -1203,7 +1203,7 @@ namespace ug
                     }
                     MGSD->set_active_stages(activeStage);
                 }
-                GMG->set_mg_stats(MGSD);
+                //GMG->set_mg_stats(MGSD);
 
                 preconditioner = GMG.template cast_static<TPrecond>();
             }
@@ -1409,7 +1409,7 @@ namespace ug
                     typedef RiverOrdering<TAlgebra, TDomain, ordering_container_type> TR;
                     SmartPtr<TR> order = make_sp(new TR());
                     std::string sources = desc["ordering"]["sources"];
-                    order->select_sources(sources.c_str());
+                    order->select_sinks(sources.c_str());
                     ordering = order.template cast_dynamic<TBase>();
                 }
             }
