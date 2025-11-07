@@ -175,9 +175,10 @@ namespace ug
                     string name = string("SolverUtil").append(suffix);
                     reg.template add_class_<T>(name, grp)
                         .add_constructor()
-                        //.add_method("hasComponent", &T::hasComponent)
+                        .add_method("hasComponent", &T::hasComponent)
                         //.add_method("setComponent", &T::setComponent)
                         //.add_method("getComponent", &T::getComponent)
+                        .add_method("getApproximationSpace", &T::getApproximationSpace)
                         .add_method("setApproximationSpace", &T::setApproximationSpace)
                         .add_method("setDiscretization", &T::setDiscretization)
                         .add_method("setDebug" ,&T::setDebug)

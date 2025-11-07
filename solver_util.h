@@ -122,13 +122,13 @@ namespace ug
             SmartPtr<NewtonSolver<TAlgebra>>,
             SmartPtr<IAssemble<TAlgebra>>,
             SmartPtr<AssembledMultiGridCycle<TDomain, TAlgebra>>,
-            SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>>,
             SmartPtr<LinearSolver<typename TAlgebra::vector_type>>,
             SmartPtr<CG<typename TAlgebra::vector_type>>,
             SmartPtr<BiCGStab<typename TAlgebra::vector_type>>,
             SmartPtr<GMRES<typename TAlgebra::vector_type>>,
             SmartPtr<SuperLUSolver<TAlgebra>>,
             SmartPtr<LU<TAlgebra>>,
+            SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>>,
             SmartPtr<AgglomeratingSolver<TAlgebra>>>;
 
         template<typename TDomain, typename TAlgebra>
@@ -139,21 +139,26 @@ namespace ug
              * map for access. Calls to various subroutines are made
              * */
         public:
-            void setDiscretization(const std::string key, SmartPtr<IAssemble<TAlgebra>> component){
+            void setDiscretization(const std::string key, SmartPtr<IAssemble<TAlgebra>> component) {
                 setComponent(key, component);
             }
 
-            void setApproximationSpace(const std::string key, SmartPtr<ApproximationSpace<TDomain>> component){
+            void setApproximationSpace(const std::string key, SmartPtr<ApproximationSpace<TDomain>> component) {
                 setComponent(key, component);
             }
 
-            void setDebug(const std::string key, SmartPtr<ug::GridFunctionDebugWriter<TDomain, TAlgebra>> component){
+            void setDebug(const std::string key, SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> component) {
+
                 setComponent(key, component);
             }
 
-            void setComponent(const std::string &key, SolverComponent<TDomain, TAlgebra> component){
+            void setComponent(const std::string &key, SolverComponent<TDomain, TAlgebra> component) {
                 components[key] = component;
             }
+
+            void getApproximationSpace(const std::string key) const{
+                            getComponent(key);
+                        }
 
             SolverComponent<TDomain, TAlgebra> getComponent(const std::string &key) const{
                 auto it = components.find(key);
@@ -265,9 +270,10 @@ namespace ug
         /// @param solverutil     Optional solver utility for component access.
         template<typename TDomain, typename TAlgebra, typename TVector, typename TSolver>
         void SetDebugWriter(SmartPtr<TSolver> obj,
-                            nlohmann::json& solverDesc,
-                            const nlohmann::json* json_defaults = nullptr,
-                            const SolverUtil<TDomain, TAlgebra>* solverutil = nullptr){
+                            nlohmann::json &solverDesc,
+                            SolverUtil<TDomain, TAlgebra> &solverutil ,
+                            nlohmann::json &json_defaults
+                            ){
             // Try to find the debug description in the JSON 'desc'
             // First check "debug", then fallback to "debugSolver"
             // If neither is found, check the defaults JSON if provided
@@ -277,9 +283,9 @@ namespace ug
             if (dbgDescIt == desc.end()){
                 dbgDescIt = desc.find("debugSolver");
             }
-            if (dbgDescIt == desc.end() && json_defaults){
-                auto defIt = json_defaults->find("debug");
-                if (defIt != json_defaults->end()){
+            if (dbgDescIt == desc.end() && !(json_defaults.is_null())){
+                auto defIt = json_defaults.find("debug");
+                if (defIt != json_defaults.end()){
                     dbgDescIt = desc.insert(desc.end(), *defIt);
                 }
             }
@@ -315,22 +321,22 @@ namespace ug
                     SmartPtr<IVectorDebugWriter<TVector>> dbgWriter;
                     
                     // Use debug writer from solverutil if available
-                    if (solverutil && solverutil->hasComponent("debug")){
+                    if (solverutil.hasComponent("debug")){
                         UG_LOG("SetDebugWriter: Using debug writer from solverutil.\n");
-                        auto rawDbg = solverutil->template getComponentAs<GridFunctionDebugWriter<TDomain, TAlgebra>>("debug");
+                        auto rawDbg = std::get<SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>>>(solverutil.getComponent("debug"));
                         dbgWriter = SmartPtr<IVectorDebugWriter<typename TAlgebra::vector_type>>(rawDbg);
                     }
                     else {
                         // Otherwise, create a new debug writer with ApproximationSpace
                         SmartPtr<ApproximationSpace<TDomain>> approxSpace;
 
-                        if (solverutil && solverutil->hasComponent("approxSpace")){
-                            approxSpace = solverutil->template getComponentAs<ApproximationSpace<TDomain>>("approxSpace");
+                        if (solverutil.hasComponent("approxSpace")){
+                            approxSpace = std::get<SmartPtr<ApproximationSpace<TDomain>>>(solverutil.getComponent("approxSpace"));
                         }
 
                         if (!approxSpace){
                             UG_THROW("An ApproximationSpace is required to create the DebugWriter."
-                                     "Consider setting the 'approxSpace' property of of the object to debug,"
+                                     "Consider setting the 'approxSpace' property of the object to debug,"
                                      "or alternatively the util.solver.defaults.approxSpace property."
                                      "Otherwise set util.debug_writer to your own debug writer object.");
                         }
@@ -587,9 +593,10 @@ namespace ug
             using Lin = TReturn;
             SetDebugWriter<Dom, Alg, Vec, Lin>(
                           linSolver, 
-                          solverDesc, 
-                          &json_default_linearSolver, 
-                          &solverutil
+                          solverDesc,
+                          solverutil,
+                          json_default_linearSolver
+
             );
             return linSolver;
         }
@@ -743,15 +750,19 @@ namespace ug
                 }
                 
                 // SetDebugWriter
+                if(solverutil.hasComponent("approxSpace")){
+                UG_LOG("approxSpace has been found\n");
+                }
                 using Dom = TDomain;
                 using Alg = TAlgebra;
                 using Vec = typename TAlgebra::vector_type;
                 using Newt = NewtonSolver<TAlgebra>;
                 SetDebugWriter<Dom, Alg, Vec, Newt>(
                               newtonSolver, 
-                              solverDesc, 
-                              &json_default_nonlinearSolver, 
-                              &solverutil
+                              solverDesc,
+                              solverutil,
+                              json_default_nonlinearSolver
+
                 );
                 return newtonSolver;
             }
@@ -1146,7 +1157,13 @@ namespace ug
                     bool debug = desc["gmg"]["debug"];
                     if (debug){
                         bool vtk = true;
+                        if (desc["gmg"]["debug"].contains("vtk")){
+                            vtk = desc["gmg"]["debug"]["vtk"];
+                        }
                         bool conn_viewer = false;
+                        if (desc["gmg"]["debug"].contains("conn_viewer")){
+                            conn_viewer = desc["gmg"]["debug"]["conn_viewer"];
+                        }
                         typedef GridFunctionDebugWriter<TDomain, TAlgebra> TDW;
                         SmartPtr<TDW> DWW = make_sp(new TDW(approxSpace));
                         DWW->set_conn_viewer_output(conn_viewer);
@@ -1155,7 +1172,7 @@ namespace ug
                     }
                 }
 
-                if (solverutil.hasComponent("Debugger") and !desc["gmg"].contains("debug")){
+                if (solverutil.hasComponent("debug") and !desc["gmg"].contains("debug")){
                     debugDesc = SetDebugger(desc, solverutil);
                     GMG->set_debug(debugDesc);
                 }
@@ -1167,44 +1184,47 @@ namespace ug
                     gatheredBaseSolverIfAmbiguous = desc["gmg"]["gatheredBaseSolverIfAmbiguous"];
                 }
                 GMG->set_gathered_base_solver_if_ambiguous(gatheredBaseSolverIfAmbiguous);
-                UG_LOG("beginn mgStats!\n")
-                UG_LOG("mgStats found!\n")
-                std::cout << json_default_mgStats.dump() << std::endl;
-                typedef MGStats<TDomain, TAlgebra> MGS;
-                SmartPtr<MGS> MGSD = make_sp(new MGS());
+                if (desc["gmg"].contains("mgStats")){
+                    if(!(desc["mgStats"].is_null())){
+                    UG_LOG("beginn mgStats!\n")
+                    UG_LOG("mgStats found!\n")
+                    std::cout << json_default_mgStats.dump() << std::endl;
+                    typedef MGStats<TDomain, TAlgebra> MGS;
+                    SmartPtr<MGS> MGSD = make_sp(new MGS());
 
-                std::string prefix = json_default_mgStats["filenamePrefix"];
-                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("filenamePrefix")){
-                    prefix = desc["gmg"]["mgStats"]["standard"]["filenamePrefix"];
-                }
-                MGSD->set_filename_prefix(prefix.c_str());
-
-                bool exitError = json_default_mgStats["exitOnError"];
-                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("exitOnError")){
-                    exitError = desc["gmg"]["mgStats"]["standard"]["exitOnError"];
-                }
-                MGSD->set_exit_on_error(exitError);
-
-                bool errorVec = json_default_mgStats["writeErrVecs"];
-                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("writeErrVecs")){
-                    errorVec = desc["gmg"]["mgStats"]["standard"]["writeErrVecs"];
-                }
-                MGSD->set_write_err_vecs(errorVec);
-
-                bool errorDiff = json_default_mgStats["writeErrDiffs"];
-                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("writeErrDiffs")){
-                    errorDiff = desc["gmg"]["mgStats"]["standard"]["writeErrDiffs"];
-                }
-                MGSD->set_write_err_diffs(errorDiff);
-                if (!json_default_mgStats["activeStages"].is_null()){
-                    std::vector<int> activeStage = json_default_mgStats["activeStages"].get<std::vector<int>>();
-                    if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("activeStages")){
-                        activeStage = desc["gmg"]["mgStats"]["standard"]["activeStages"].get<std::vector<int>>();
+                    std::string prefix = json_default_mgStats["filenamePrefix"];
+                    if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("filenamePrefix")){
+                        prefix = desc["gmg"]["mgStats"]["standard"]["filenamePrefix"];
                     }
-                    MGSD->set_active_stages(activeStage);
-                }
-                //GMG->set_mg_stats(MGSD);
+                    MGSD->set_filename_prefix(prefix.c_str());
 
+                    bool exitError = json_default_mgStats["exitOnError"];
+                    if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("exitOnError")){
+                        exitError = desc["gmg"]["mgStats"]["standard"]["exitOnError"];
+                    }
+                    MGSD->set_exit_on_error(exitError);
+
+                    bool errorVec = json_default_mgStats["writeErrVecs"];
+                    if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("writeErrVecs")){
+                        errorVec = desc["gmg"]["mgStats"]["standard"]["writeErrVecs"];
+                    }
+                    MGSD->set_write_err_vecs(errorVec);
+
+                    bool errorDiff = json_default_mgStats["writeErrDiffs"];
+                    if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("writeErrDiffs")){
+                        errorDiff = desc["gmg"]["mgStats"]["standard"]["writeErrDiffs"];
+                    }
+                    MGSD->set_write_err_diffs(errorDiff);
+                    if (!json_default_mgStats["activeStages"].is_null()){
+                        std::vector<int> activeStage = json_default_mgStats["activeStages"].get<std::vector<int>>();
+                        if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("activeStages")){
+                            activeStage = desc["gmg"]["mgStats"]["standard"]["activeStages"].get<std::vector<int>>();
+                        }
+                        MGSD->set_active_stages(activeStage);
+                    }
+                    GMG->set_mg_stats(MGSD);
+                }
+            }
                 preconditioner = GMG.template cast_static<TPrecond>();
             }
             else if (type == "schur"){
@@ -1431,10 +1451,21 @@ namespace ug
         template<typename TDomain, typename TAlgebra>
         SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> SetDebugger(
             nlohmann::json &desc, SolverUtil<TDomain, TAlgebra> &solverutil){
-            SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> debugger;
-            debugger = std::get<SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>>>(
-                solverutil.getComponent("debugger"));
-            return debugger;
+            typedef GridFunctionDebugWriter<TDomain, TAlgebra> TDW;
+            bool vtk = true;
+            bool conn_viewer = false;
+            UG_LOG("ApproximationSpace found!\n");
+            SmartPtr<ApproximationSpace<TDomain>> approxSpace = NullSmartPtr();
+            approxSpace = std::get<SmartPtr<ApproximationSpace<TDomain>>>(
+            solverutil.getComponent("approxSpace"));
+            SmartPtr<TDW> DWW = make_sp(new TDW(approxSpace));
+            DWW->set_conn_viewer_output(conn_viewer);
+            DWW->set_vtk_output(vtk);  
+            return DWW;
+            //SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> debugger;
+            //debugger = std::get<SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>>>(
+            //    solverutil.getComponent("debugger"));
+            //return debugger;
         }
                 // Needs tests independent from other util.lua 
         template <typename TDomain, typename TAlgebra>

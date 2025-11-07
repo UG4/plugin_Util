@@ -6,7 +6,7 @@
 --
 ----------------------------------------------------------
 PrintBuildConfiguration()
-ug_load_script("../lua/lua-include.lua")
+ug_load_script("../../../lua/lua-include.lua")
 ug_load_script ("util/load_balancing_util.lua")
 
 dim = 2 -- dimensionality of the problem
@@ -29,7 +29,7 @@ boussinesq = true -- if to use the Boussinesq approximation
 -- Geometry and parameters of the numerical methods
 ------------------------------------------------------------------------------------------
 
-gridName	= "grids/henry_quad_2x1.ugx" -- grid of quadrilaterals
+gridName	= "../grids/henry_quad_2x1.ugx" -- grid of quadrilaterals
 --gridName	= "grids/henry_tri_4.ugx" -- alternative grid (of triangles)
 
 numRefs 	= 7 -- finest grid level
