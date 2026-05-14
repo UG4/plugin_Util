@@ -82,12 +82,12 @@ if(USE_PYBIND11)
 	add_library(${pluginName} STATIC ${SOURCES})
 
 	SET(myPluginSources util_plugin_pybind.cpp)
-	# SET(myLibraries ug4 SuperLU6)
+	SET(myLibraries ${pluginName} ${targetLibraryName}) # targetLibraryName is either ug4 or ug4_s
 	
 	# First argument must match module name in PYBIND11_MODULE call
 	python_add_library(pyutil MODULE ${myPluginSources} ${SOURCES} WITH_SOABI)
 	# ug4pybind_add_module(pyutil ${myPluginSources} ${myLibraries})
-	target_link_libraries (pyutil PRIVATE ${pluginName} ug4_s)
+	target_link_libraries (pyutil PRIVATE ${myLibraries})
 	set_target_properties(pyutil PROPERTIES INSTALL_RPATH "$ORIGIN/..:$ORIGIN/../../../lib")
 	install(TARGETS pyutil LIBRARY DESTINATION ug4py COMPONENT pymodules)
 endif(USE_PYBIND11)
