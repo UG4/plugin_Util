@@ -89,8 +89,10 @@ if(USE_PYBIND11)
 	# ug4pybind_add_module(pyutil ${myPluginSources} ${myLibraries})
 	target_link_libraries (pyutil PRIVATE ${myLibraries})
 	if(APPLE)
-    	set_target_properties(pyutil PROPERTIES INSTALL_RPATH "@loader_path:@loader_path/../lib")
-	elseif(LINUX)
+    	set_target_properties(pyutil PROPERTIES 
+    		INSTALL_RPATH "@loader_path;@loader_path/../lib"
+    		BUILD_WITH_INSTALL_RPATH TRUE)
+	elseif(LINUX AND NOT APPLE)
 		set_target_properties(pyutil PROPERTIES INSTALL_RPATH "$ORIGIN:$ORIGIN/../lib")
 	endif()
 	install(TARGETS pyutil LIBRARY DESTINATION ug4py COMPONENT pymodules)
