@@ -139,7 +139,8 @@ namespace ug
                 //	useful defines
                 string suffix = GetDomainAlgebraSuffix<TDomain, TAlgebra>();
                 string tag = GetDomainAlgebraTag<TDomain, TAlgebra>();
-
+                
+                #ifdef UG_USE_JSON
                 {
 
                     typedef SolverUtilFunctionProvider<TDomain, TAlgebra> T;
@@ -155,6 +156,8 @@ namespace ug
                         .set_construct_as_smart_pointer(true);
                     reg.add_class_to_group(name, "SolverUtilFunctionProvider", tag);
                 }
+                #endif
+                
                 /*{
                     // This is more complicated, as the return type should be included in name.
                     std::string grpname = std::string("CreatePreconditioner");
@@ -168,6 +171,8 @@ namespace ug
                 // reg.add_function(grpname.append(suffix),
                 //                static_cast<SmartPtr<TDomain>(*)(const std::string&, int, const std::vector<std::string> &)>
                 //              (&CreateDomain<TDomain>), grpname);
+                
+                #ifdef UG_USE_JSON
                 {
                     // typedef Domain<dim> domain_type;
                     typedef SolverUtil<TDomain, TAlgebra> T;
@@ -184,7 +189,9 @@ namespace ug
                         .set_construct_as_smart_pointer(true);
                     reg.add_class_to_group(name, "SolverUtil", tag);
                 }
+                #endif
             }
+           
 
             /**
              * Function called for the registration of Domain dependent parts
@@ -210,12 +217,16 @@ namespace ug
                     reg.add_function(grpname.append(suffix),
                                      static_cast<SmartPtr<TDomain> (*)(const std::string &, int, const std::vector<std::string> &)>(&CreateDomain<TDomain>), grpname);
                 }
+              
+        
                 {
                     // This is more complicated, as the return type should be included in name.
                     std::string grpname = std::string("CreateDomain");
                     reg.add_function(grpname.append(suffix),
                                      static_cast<SmartPtr<TDomain> (*)(const std::string &)>(&CreateDomain<TDomain>), grpname);
                 }
+                
+                
                 {
                     // This is more complicated, as the return type should be included in name.
                     std::string grpname = std::string("CreateDomain");
@@ -265,11 +276,15 @@ namespace ug
                 typedef typename TAlgebra::vector_type vector_type;
                 {
                     // This is more complicated, as the return type should be included in name.
+                    
+                    #ifdef UG_USE_JSON
                     {
                         std::string grpname = std::string("CreateConvCheck");
                         reg.add_function(grpname.append(suffix),
                                          static_cast<SmartPtr<StdConvCheck<vector_type>> (*)(nlohmann::json &)>(&CreateConvCheck<TAlgebra>), grpname);
                     }
+                    #endif
+
                 }
             }
 
