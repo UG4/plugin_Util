@@ -117,13 +117,13 @@ namespace ug{
             SmartPtr<NewtonSolver<TAlgebra>>,
             SmartPtr<IAssemble<TAlgebra>>,
             SmartPtr<AssembledMultiGridCycle<TDomain, TAlgebra>>,
-            SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>>,
             SmartPtr<LinearSolver<typename TAlgebra::vector_type>>,
             SmartPtr<CG<typename TAlgebra::vector_type>>,
             SmartPtr<BiCGStab<typename TAlgebra::vector_type>>,
             SmartPtr<GMRES<typename TAlgebra::vector_type>>,
             SmartPtr<SuperLUSolver<TAlgebra>>,
             SmartPtr<LU<TAlgebra>>,
+            SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>>,
             SmartPtr<AgglomeratingSolver<TAlgebra>>>;
 
         template<typename TDomain, typename TAlgebra>
@@ -149,7 +149,10 @@ namespace ug{
             void setComponent(const std::string &key, SolverComponent<TDomain, TAlgebra> component){
                 components[key] = component;
             }
-
+            void getApproximationSpace(const std::string key) const{
+                getComponent(key);
+            }
+            
             SolverComponent<TDomain, TAlgebra> getComponent(const std::string &key) const{
                 auto it = components.find(key);
                 if (it != components.end()){

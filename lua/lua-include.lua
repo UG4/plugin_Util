@@ -21,7 +21,6 @@ function util.test.CreateConvCheck(convCheckDesc, solverutil)
     local descriptor=JSON();
     local json_util = JSON();
     JSON_parse(descriptor, util.json.encode(convCheckDesc))
-    JSON_parse(json_util, util.json.encode(solverutil))
     print("|"..JSON_dump(descriptor).."|")
     validator:validate_document(descriptor)
 
