@@ -46,6 +46,7 @@ set (CMAKE_CXX_STANDARD 17)
 cmake_minimum_required(VERSION 2.6)
 
 project(UG_PLUGIN_${pluginName})
+add_definitions(-DUG_USE_JSON)
 add_definitions(-DUG_USE_SUPERLU)
 
 # include the definitions and dependencies for ug-plugins.

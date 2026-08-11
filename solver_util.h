@@ -5,6 +5,8 @@
 #ifndef UG4_SOLVER_UTIL_H
 #define UG4_SOLVER_UTIL_H
 
+#ifdef UG_USE_JSON
+
 #include <nlohmann/json.hpp>
 
 #include "common/common.h"
@@ -49,10 +51,8 @@
 #include "../SuperLU6/super_lu.h"
 #include "lib_disc/spatial_disc/domain_disc.h"
 
-namespace ug
-{
-    namespace Util
-    {
+namespace ug{
+    namespace Util{
         void CondAbort(bool condition, std::string message){
             UG_ASSERT(!condition, "ERROR in util.solver: " << message);
         }
@@ -61,8 +61,7 @@ namespace ug
         SmartPtr<IOrderingAlgorithm<TAlgebra, std::vector<size_t>>>
         CreateOrdering(nlohmann::json &desc);
         template <typename TAlgebra>
-        SmartPtr<StdConvCheck<typename TAlgebra::vector_type>> CreateConvCheck(nlohmann::json &descriptor)
-        {
+        SmartPtr<StdConvCheck<typename TAlgebra::vector_type>> CreateConvCheck(nlohmann::json &descriptor){
             typedef typename TAlgebra::vector_type vector_type;
             // set parameters from descriptor attributes
             bool verbose = false;
@@ -303,7 +302,7 @@ namespace ug
                     vtk = dbgDesc.value("vtk", true);
                     conn_viewer = dbgDesc.value("conn_viewer", false);
                 }
-                else {
+                else{
                     UG_THROW("Unrecognized type of debug writer specification.");
                 }
                 std::stringstream ss;
@@ -322,7 +321,7 @@ namespace ug
                         auto rawDbg = std::get<SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>>>(solverutil.getComponent("debug"));
                         dbgWriter = SmartPtr<IVectorDebugWriter<typename TAlgebra::vector_type>>(rawDbg);
                     }
-                    else {
+                    else{
                         // Otherwise, create a new debug writer with ApproximationSpace
                         SmartPtr<ApproximationSpace<TDomain>> approxSpace;
 
@@ -363,7 +362,7 @@ namespace ug
                         dbgObj->set_debug(dbgWriter);
                         UG_LOG("SetDebugWriter: DebugWriter successfully set!\n");
                     } 
-                    else {
+                    else{
                         UG_LOG("Warning: Debug writer cannot be set — solver does not inherit from VectorDebugWritingObject.\n");
                     }
                 }
@@ -1944,4 +1943,6 @@ namespace ug
         };
     } // namespace util
 } // namespace ug
+
+#endif // UG_USE_JSON
 #endif // UG4_SOLVER_UTIL_H
