@@ -19,17 +19,13 @@
 #include "../../ugcore/ugbase/lib_disc/function_spaces/grid_function_util.h"
 #include "lib_algebra/operator/convergence_check.h"
 #include "lib_algebra/operator/linear_solver/linear_solver.h"
-#include "lib_algebra/ordering_strategies/algorithms/boost_cuthill_mckee_ordering.cpp"
-#include "lib_algebra/ordering_strategies/algorithms/boost_minimum_degree_ordering.cpp"
-#include "lib_algebra/ordering_strategies/algorithms/SCC_ordering.cpp"
-#include "lib_algebra/ordering_strategies/algorithms/topological_ordering.cpp"
+#include "lib_algebra/ordering_strategies/algorithms/boost_cuthill_mckee_ordering.h"
+#include "lib_algebra/ordering_strategies/algorithms/boost_minimum_degree_ordering.h"
+#include "lib_algebra/ordering_strategies/algorithms/SCC_ordering.h"
+#include "lib_algebra/ordering_strategies/algorithms/topological_ordering.h"
 #include "lib_disc/ordering_strategies/algorithms/lexorder.h"
 #include "lib_disc/ordering_strategies/algorithms/riverorder.h"
 // include solver components
-#include "../../externals/JSONForUG4/json-cxx/include/nlohmann/adl_serializer.hpp"
-#include "../../externals/JSONForUG4/json-cxx/include/nlohmann/json.hpp"
-#include "../../externals/JSONForUG4/json-cxx/single_include/nlohmann/json.hpp"
-#include "../../externals/JSONForUG4/json-cxx/single_include/nlohmann/json.hpp"
 #include "lib_disc/function_spaces/grid_function.h"
 #include "lib_algebra/operator/preconditioner/ilu.h"
 #include "lib_algebra/operator/preconditioner/ilut.h"
@@ -1029,11 +1025,52 @@ namespace ug
                     UG_LOG("An ApproximationSpace is required to create a 'gmg' solver.\n");
                     exit(0);
                 }
-                std::string baseSolverType = json_default_preconds["gmg"]["baseSolver"];
-                if (desc["gmg"].contains("baseSolver")){
-                    baseSolverType = desc["gmg"]["baseSolver"];
-                }
+
+                // Create a JSON descriptor for the GMG base solver.
                 nlohmann::json baseSolverDesc;
+                // Check whether the user explicitly specified a base solver.
+                if (desc.contains("baseSolver")){
+                    if (desc["baseSolver"].is_string()){
+                        baseSolverDesc["type"] = desc["baseSolver"];
+                    }
+                    else if (desc["baseSolver"].is_object()){
+                        baseSolverDesc = desc["baseSolver"];
+                    }
+                }
+                else{
+                    baseSolverDesc["type"] = json_default_preconds["gmg"]["baseSolver"];
+                }
+                GMG->set_base_solver(CreateLinearSolver(baseSolverDesc, solverutil));
+
+                nlohmann::json smootherDesc;
+
+                // Use the user-provided smoother if available.
+                if (desc.contains("smoother")){
+                    // A short descriptor such as "sgs" is converted into {"type": "sgs"}.
+                    if (desc["smoother"].is_string()){
+                        smootherDesc["type"] = desc["smoother"];
+                    }
+                    // A full descriptor such as {"type": "sgs", ...} is preserved.
+                    else if (desc["smoother"].is_object()){
+                        smootherDesc = desc["smoother"];
+                    }
+                }
+
+
+                // Use the default smoother if nothing was specified.
+                else{
+                    // The current default is "gs".
+                    smootherDesc["type"] = json_default_preconds["gmg"]["smoother"];
+                }
+
+                // Recursively create the requested smoother.
+                SmartPtr<ILinearIterator<TVector>> smoother =
+                    CreatePreconditioner(smootherDesc, solverutil);
+
+                // Attach the smoother to the multigrid preconditioner.
+                GMG->set_smoother(smoother);
+
+                /*
                 baseSolverDesc["type"] = baseSolverType;
                 // SmartPtr<LinearSolver<typename TAlgebra::vector_type>> baseSolver = CreateLinearSolver(baseSolverDesc, solverutil);
                 UG_LOG("Solver found!\n");
@@ -1048,17 +1085,20 @@ namespace ug
                 SmartPtr<ILinearIterator<TVector>> smoother = CreatePreconditioner(smootherTypeDesc, solverutil);
                 UG_LOG("Smoother found!\n");
                 GMG->set_smoother(smoother);
+                */
 
+                // Load the default base level.
                 number baseLevel = json_default_preconds["gmg"]["baseLevel"];
-                if (desc["gmg"].contains("baseLevel")){
-                    baseLevel = desc["gmg"]["baseLevel"];
+                // Override the default if the user specified a base level.
+                if (desc.contains("baseLevel")){
+                    baseLevel = desc["baseLevel"];
                 }
                 UG_LOG("base_level found!\n");
                 GMG->set_base_level(baseLevel);
 
                 std::string cycleType = json_default_preconds["gmg"]["cycle"];
-                if (desc["gmg"].contains("cycle")){
-                    cycleType = desc["gmg"]["cycle"];
+                if (desc.contains("cycle")){
+                    cycleType = desc["cycle"];
                 }
                 UG_LOG("CycleType found!\n");
                 GMG->set_cycle_type(cycleType);
@@ -1070,80 +1110,119 @@ namespace ug
                     UG_LOG("Discretization found!\n");
                     GMG->set_discretization(discretization);
                 }
+
                 number preSmooth = json_default_preconds["gmg"]["preSmooth"];
-                if (desc["gmg"].contains("preSmooth")){
-                    preSmooth = desc["gmg"]["preSmooth"];
+                if (desc.contains("preSmooth")){
+                    preSmooth = desc["preSmooth"];
                 }
                 UG_LOG("presmooth found!\n");
                 GMG->set_num_presmooth(preSmooth);
 
                 number postSmooth = json_default_preconds["gmg"]["postSmooth"];
-                if (desc["gmg"].contains("postSmooth")){
-                    postSmooth = desc["gmg"]["postSmooth"];
+                if (desc.contains("postSmooth")){
+                    postSmooth = desc["postSmooth"];
                 }
                 UG_LOG("postsmooth found!\n");
                 GMG->set_num_postsmooth(postSmooth);
 
                 bool rap = json_default_preconds["gmg"]["rap"];
-                if (desc["gmg"].contains("rap")){
-                    rap = desc["gmg"]["rap"];
+                if (desc.contains("rap")){
+                    rap = desc["rap"];
                 }
                 UG_LOG("rap found!\n");
                 GMG->set_rap(rap);
 
                 bool rim = json_default_preconds["gmg"]["rim"];
-                if (desc["gmg"].contains("rim")){
-                    rim = desc["gmg"]["rim"];
+                if (desc.contains("rim")){
+                    rim = desc["rim"];
                 }
                 UG_LOG("smooth_on_surface_rim found!\n");
                 GMG->set_smooth_on_surface_rim(rim);
 
                 bool emulateFullRefined = json_default_preconds["gmg"]["emulateFullRefined"];
-                if (desc["gmg"].contains("emulateFullRefined")){
-                    emulateFullRefined = desc["gmg"]["emulateFullRefined"];
+                if (desc.contains("emulateFullRefined")){
+                    emulateFullRefined = desc["emulateFullRefined"];
                 }
                 UG_LOG("emulate_full_refined_grid found!\n");
                 GMG->set_emulate_full_refined_grid(emulateFullRefined);
 
                 UG_LOG("transfer started!\n")
 
+                // typedef StdTransfer<TDomain, TAlgebra> TFD;
+                // SmartPtr<TFD> TF = make_sp(new TFD());
+                // UG_LOG("SmartPtr created\n");
+                // std::cout << json_default_transfer.dump() << std::endl;
+                // number restrictionDamp = json_default_transfer["restrictionDamp"];
+                // UG_LOG("Defaultrestiction!\n");
+
+                // Create a descriptor for the transfer operator.
+                nlohmann::json transferDesc;
+
+                // Use the transfer specified by the user.
+                if (desc.contains("transfer")){
+                    // Convert the short form "std" into {"type": "std"}.
+                    if (desc["transfer"].is_string()){
+                        transferDesc["type"] = desc["transfer"];
+                    }
+
+                    // Preserve a complete transfer descriptor.
+                    else if (desc["transfer"].is_object()){
+                        transferDesc = desc["transfer"];
+                    }
+                }
+                // Use the default transfer if none was specified.
+                else{
+                    transferDesc["type"] = "std";
+                }
+
+                // Create the standard transfer operator.
                 typedef StdTransfer<TDomain, TAlgebra> TFD;
                 SmartPtr<TFD> TF = make_sp(new TFD());
-                UG_LOG("SmartPtr created\n");
-                std::cout << json_default_transfer.dump() << std::endl;
+
+                // Load the default restriction damping.
                 number restrictionDamp = json_default_transfer["restrictionDamp"];
-                UG_LOG("Defaultrestiction!\n");
-                if (desc["gmg"].contains("transfer") && desc["gmg"]["transfer"].contains("restrictionDamp")){
-                    restrictionDamp = desc["gmg"]["transfer"]["restrictionDamp"];
-                    UG_LOG("restiction!\n");
+
+                // Override it if the transfer descriptor specifies a value.
+                if (transferDesc.contains("restrictionDamp")){
+                    restrictionDamp = transferDesc["restrictionDamp"];
                 }
-                UG_LOG("restictionDamp!");
+
+                // Apply the restriction damping.
                 TF->set_restriction_damping(restrictionDamp);
 
+                // Load the default prolongation damping.
                 number prolongationDamp = json_default_transfer["prolongationDamp"];
-                if (desc["gmg"].contains("transfer") && desc["gmg"]["transfer"].contains("prolongationDamp")){
-                    prolongationDamp = desc["gmg"]["transfer"]["prolongationDamp"];
+
+                // Override it if the transfer descriptor specifies a value.
+                if (transferDesc.contains("prolongationDamp")){
+                    prolongationDamp = transferDesc["prolongationDamp"];
                 }
-                UG_LOG("prolongation!");
+
+                // Apply the prolongation damping.
                 TF->set_prolongation_damping(prolongationDamp);
 
-                bool optimization = json_default_transfer["enableP1LagrangeOptimization"];
-                if (desc["gmg"].contains("transfer") && desc["gmg"]["transfer"].
-                    contains("enableP1LagrangeOptimization")){
-                    optimization = desc["gmg"]["transfer"]["enableP1LagrangeOptimization"];
+                // Load the default P1 Lagrange optimization setting.
+                bool optimization =
+                    json_default_transfer["enableP1LagrangeOptimization"];
+
+                // Override it if requested.
+                if (transferDesc.contains("enableP1LagrangeOptimization")){
+                    optimization =
+                        transferDesc["enableP1LagrangeOptimization"];
                 }
-                UG_LOG("lagrange_opt!");
+
+                // Apply the optimization setting.
                 TF->enable_p1_lagrange_optimization(optimization);
 
-                // TF->set_debug(TF, transferDesc, transferDefault, solverutil);
-                UG_LOG("transfer found!\n");
+                // Attach the transfer operator to GMG.
                 GMG->set_transfer(TF);
+
                 
                 // entweder mit boolean Objekt bauen oder direkt Objekt abfragen
 
                 SmartPtr<GridFunctionDebugWriter<TDomain, TAlgebra>> debugDesc;
                 if (desc["gmg"].contains("debug")){
-                    bool debug = desc["gmg"]["debug"];
+                    bool debug = desc["debug"];
                     if (debug){
                         bool vtk = true;
                         bool conn_viewer = false;
@@ -1163,8 +1242,8 @@ namespace ug
 
                 bool gatheredBaseSolverIfAmbiguous = json_default_preconds["gmg"]["gatheredBaseSolverIfAmbiguous"];
                 UG_LOG("gatheredBaseSolverIfAMb found!\n")
-                if (desc["gmg"].contains("gatheredBaseSolverIfAmbiguous")){
-                    gatheredBaseSolverIfAmbiguous = desc["gmg"]["gatheredBaseSolverIfAmbiguous"];
+                if (desc.contains("gatheredBaseSolverIfAmbiguous")){
+                    gatheredBaseSolverIfAmbiguous = desc["gatheredBaseSolverIfAmbiguous"];
                 }
                 GMG->set_gathered_base_solver_if_ambiguous(gatheredBaseSolverIfAmbiguous);
                 UG_LOG("beginn mgStats!\n")
