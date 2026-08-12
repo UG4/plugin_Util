@@ -1,3 +1,4 @@
 *.vec
-.ugx
-*Zone.Identifier
+*.vtu
+.idea/
+*:Zone.Identifier
