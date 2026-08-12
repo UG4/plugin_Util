@@ -242,7 +242,92 @@ namespace ug{
 
             return ls;
         }
-        
+
+        template<typename TDomain, typename TAlgebra>
+        SmartPtr<MGStats<TDomain, TAlgebra>>
+        CreateMGStats(nlohmann::json& mgStatsDesc){
+            // If no MGStats descriptor is provided, return no MGStats object.
+            if (mgStatsDesc.is_null()){
+                return NullSmartPtr();
+            }
+
+            // Use the standard MGStats defaults.
+            nlohmann::json defaults = json_predefined_defaults::solvers["mgStats"]["standard"];
+
+            // Prepare a descriptor for the standard MGStats implementation.
+            nlohmann::json desc;
+
+            // Accept the short form: "standard".
+            if (mgStatsDesc.is_string()){
+                if (mgStatsDesc != "standard"){
+                    UG_THROW("Invalid mgStats specified: " << mgStatsDesc);
+                }
+                desc = defaults;
+            }
+
+            // Accept a full object descriptor.
+            else if (mgStatsDesc.is_object()){
+                desc = mgStatsDesc;
+            }
+
+            // Reject unsupported descriptor types.
+            else{
+                UG_THROW("Invalid mgStats descriptor.");
+            }
+
+            // Create the standard MGStats object.
+            typedef MGStats<TDomain, TAlgebra> MGS;
+            SmartPtr<MGS> mgStats = make_sp(new MGS());
+
+            // Use the descriptor value if present, otherwise use the default.
+            std::string filenamePrefix =
+                desc.value("filenamePrefix",
+                    defaults["filenamePrefix"].get<std::string>());
+
+            // Set the file name prefix.
+            mgStats->set_filename_prefix(filenamePrefix.c_str());
+
+            // Use the descriptor value if present, otherwise use the default.
+            bool exitOnError =
+                desc.value("exitOnError",
+                    defaults["exitOnError"].get<bool>());
+
+            // Apply the exit-on-error setting.
+            mgStats->set_exit_on_error(exitOnError);
+
+            // Use the descriptor value if present, otherwise use the default.
+            bool writeErrVecs =
+                desc.value("writeErrVecs",
+                    defaults["writeErrVecs"].get<bool>());
+
+            // Apply the error-vector setting.
+            mgStats->set_write_err_vecs(writeErrVecs);
+
+            // Use the descriptor value if present, otherwise use the default.
+            bool writeErrDiffs =
+                desc.value("writeErrDiffs",
+                    defaults["writeErrDiffs"].get<bool>());
+
+            // Apply the error-difference setting.
+            mgStats->set_write_err_diffs(writeErrDiffs);
+
+            // Only set active stages if either the descriptor or the defaults provide them.
+            if (desc.contains("activeStages") && !desc["activeStages"].is_null()){
+                std::vector<int> activeStages =
+                    desc["activeStages"].get<std::vector<int>>();
+
+                mgStats->set_active_stages(activeStages);
+            }
+            else if (!defaults["activeStages"].is_null()){
+                std::vector<int> activeStages =
+                    defaults["activeStages"].get<std::vector<int>>();
+                mgStats->set_active_stages(activeStages);
+            }
+
+            // Return the configured MGStats object.
+            return mgStats;
+        }
+
         
         /// @brief Assigns a debug writer to a solver if supported.
         /// Uses GridFunctionDebugWriter which implements IVectorDebugWriter<TVector>.
@@ -1240,7 +1325,6 @@ namespace ug{
                     debugDesc = SetDebugger(desc, solverutil);
                     GMG->set_debug(debugDesc);
                 }
-                
 
                 bool gatheredBaseSolverIfAmbiguous = json_default_preconds["gmg"]["gatheredBaseSolverIfAmbiguous"];
                 UG_LOG("gatheredBaseSolverIfAMb found!\n")
@@ -1248,46 +1332,24 @@ namespace ug{
                     gatheredBaseSolverIfAmbiguous = desc["gatheredBaseSolverIfAmbiguous"];
                 }
                 GMG->set_gathered_base_solver_if_ambiguous(gatheredBaseSolverIfAmbiguous);
-                UG_LOG("beginn mgStats!\n")
-                UG_LOG("mgStats found!\n")
-                std::cout << json_default_mgStats.dump() << std::endl;
-                typedef MGStats<TDomain, TAlgebra> MGS;
-                SmartPtr<MGS> MGSD = make_sp(new MGS());
 
-                std::string prefix = json_default_mgStats["filenamePrefix"];
-                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("filenamePrefix")){
-                    prefix = desc["gmg"]["mgStats"]["standard"]["filenamePrefix"];
-                }
-                MGSD->set_filename_prefix(prefix.c_str());
+                UG_LOG("****** mgStats begins... ********\n")
 
-                bool exitError = json_default_mgStats["exitOnError"];
-                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("exitOnError")){
-                    exitError = desc["gmg"]["mgStats"]["standard"]["exitOnError"];
-                }
-                MGSD->set_exit_on_error(exitError);
+                // Only create MGStats if the GMG descriptor provides a non-null mgStats entry.
+                if (desc.contains("mgStats") && !desc["mgStats"].is_null()){
+                    // Create the MGStats object from the nested mgStats descriptor.
+                    SmartPtr<MGStats<TDomain, TAlgebra>> mgStats =
+                        CreateMGStats<TDomain, TAlgebra>(desc["mgStats"]);
 
-                bool errorVec = json_default_mgStats["writeErrVecs"];
-                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("writeErrVecs")){
-                    errorVec = desc["gmg"]["mgStats"]["standard"]["writeErrVecs"];
-                }
-                MGSD->set_write_err_vecs(errorVec);
-
-                bool errorDiff = json_default_mgStats["writeErrDiffs"];
-                if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("writeErrDiffs")){
-                    errorDiff = desc["gmg"]["mgStats"]["standard"]["writeErrDiffs"];
-                }
-                MGSD->set_write_err_diffs(errorDiff);
-                if (!json_default_mgStats["activeStages"].is_null()){
-                    std::vector<int> activeStage = json_default_mgStats["activeStages"].get<std::vector<int>>();
-                    if (desc.contains("mgStats") && desc.contains("standard") && desc.contains("activeStages")){
-                        activeStage = desc["gmg"]["mgStats"]["standard"]["activeStages"].get<std::vector<int>>();
+                    // Attach the created MGStats object to the geometric multigrid solver.
+                    if (mgStats.valid()){
+                        GMG->set_mg_stats(mgStats);
                     }
-                    MGSD->set_active_stages(activeStage);
                 }
-                GMG->set_mg_stats(MGSD);
 
                 preconditioner = GMG.template cast_static<TPrecond>();
             }
+
             else if (type == "schur"){
                 UG_LOG("CreatePreconditioner SchurComplement \n");
                 typedef SchurPrecond<TAlgebra> TSchur;
