@@ -91,7 +91,8 @@ solverDesc = {
 		type		= "gmg",
 		--approxSpace	= approxSpace,
 		smoother	= "jac",
-		baseSolver	= "lu"
+		baseSolver	= "lu",
+		mgStats         = "standard"
 	}
 }
 local solverutil = SolverUtil()
@@ -111,7 +112,7 @@ solver:init(A, u)
 solver:apply(u, b)
 
 
-solFileName = "laplace_test_" .. dim .. "d"
+solFileName = "laplace_mgstats_standard_" .. dim .. "d"
 print("writing solution to '" .. solFileName .. "'...")
 WriteGridFunctionToVTK(u, solFileName)
 SaveVectorForConnectionViewer(u, solFileName .. ".vec")

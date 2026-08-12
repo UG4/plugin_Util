@@ -63,31 +63,42 @@ namespace ug{
         template <typename TAlgebra>
         SmartPtr<StdConvCheck<typename TAlgebra::vector_type>> CreateConvCheck(nlohmann::json &descriptor){
             typedef typename TAlgebra::vector_type vector_type;
-            // set parameters from descriptor attributes
-            bool verbose = false;
-            if (descriptor.contains("verbose")){
-                verbose = descriptor["verbose"];
-            }
-            std::string name = "standard";
-            if (descriptor.contains("type")){
-                name = descriptor["type"];
-            }
-            number iterations = 100;
-            if (descriptor.contains("iterations")){
-                iterations = descriptor["iterations"];
-            }
-            number reduction = 1e-6;
-            if (descriptor.contains("reduction")){
-                reduction = descriptor["reduction"];
-            }
-            number absolute = 1e-12;
-            if (descriptor.contains("absolute")){
-                absolute = descriptor["absolute"];
-            }
+           
+            // Load the standard convergence-check defaults from the shared JSON defaults.
+            nlohmann::json defaults =
+                json_predefined_defaults::solvers["convCheck"]["standard"];
+
+            // Use the descriptor value if provided; otherwise use the configured default.
+            bool verbose =
+                descriptor.value("verbose", defaults["verbose"].get<bool>());
+
+            // Read the convergence-check type; currently "standard" is the default.
+            std::string name =
+                descriptor.value("type", std::string("standard"));
+
+            // Use the descriptor value if provided; otherwise use the configured default.
+            number iterations =
+                descriptor.value("iterations", defaults["iterations"].get<number>());
+
+            // Use the descriptor value if provided; otherwise use the configured default.
+            number reduction =
+                descriptor.value("reduction", defaults["reduction"].get<number>());
+
+            // Use the descriptor value if provided; otherwise use the configured default.
+            number absolute =
+                descriptor.value("absolute", defaults["absolute"].get<number>());
             bool suppress_unsuccessful = false;
             if (descriptor.contains("suppress_unsuccessful")){
                 suppress_unsuccessful = descriptor["suppress_unsuccessful"];
             }
+
+            // Print the effective convergence-check parameters before passing them to ugcore.
+            UG_LOG("CreateConvCheck: type = " << name << "\n");
+            UG_LOG("CreateConvCheck: iterations = " << iterations << "\n");
+            UG_LOG("CreateConvCheck: absolute = " << absolute << "\n");
+            UG_LOG("CreateConvCheck: reduction = " << reduction << "\n");
+            UG_LOG("CreateConvCheck: verbose = " << verbose << "\n");
+            UG_LOG("CreateConvCheck: suppress_unsuccessful = " << suppress_unsuccessful << "\n");
 
             // create convergence check
             SmartPtr<StdConvCheck<vector_type>> convCheck = make_sp<StdConvCheck<vector_type>>(
@@ -284,6 +295,9 @@ namespace ug{
                 desc.value("filenamePrefix",
                     defaults["filenamePrefix"].get<std::string>());
 
+            // Print the effective filename prefix before passing it to ugcore.
+            UG_LOG("CreateMGStats: filenamePrefix = " << filenamePrefix << "\n");
+
             // Set the file name prefix.
             mgStats->set_filename_prefix(filenamePrefix.c_str());
 
@@ -291,6 +305,9 @@ namespace ug{
             bool exitOnError =
                 desc.value("exitOnError",
                     defaults["exitOnError"].get<bool>());
+
+            // Print the effective exit-on-error setting before passing it to ugcore.
+            UG_LOG("CreateMGStats: exitOnError = " << exitOnError << "\n");
 
             // Apply the exit-on-error setting.
             mgStats->set_exit_on_error(exitOnError);
@@ -300,6 +317,9 @@ namespace ug{
                 desc.value("writeErrVecs",
                     defaults["writeErrVecs"].get<bool>());
 
+            // Print the effective write-err-vecs setting before passing it to ugcore.
+            UG_LOG("CreateMGStats: writeErrVecs = " <<  writeErrVecs << "\n");
+
             // Apply the error-vector setting.
             mgStats->set_write_err_vecs(writeErrVecs);
 
@@ -307,6 +327,9 @@ namespace ug{
             bool writeErrDiffs =
                 desc.value("writeErrDiffs",
                     defaults["writeErrDiffs"].get<bool>());
+
+            // Print the effective write-err-diffs setting before passing it to ugcore.
+            UG_LOG("CreateMGStats: writeErrDiffs = " <<  writeErrDiffs << "\n");
 
             // Apply the error-difference setting.
             mgStats->set_write_err_diffs(writeErrDiffs);
@@ -316,11 +339,14 @@ namespace ug{
                 std::vector<int> activeStages =
                     desc["activeStages"].get<std::vector<int>>();
 
+                UG_LOG("CreateMGStats: ActiveStages configured\n");
                 mgStats->set_active_stages(activeStages);
             }
             else if (!defaults["activeStages"].is_null()){
                 std::vector<int> activeStages =
                     defaults["activeStages"].get<std::vector<int>>();
+
+                UG_LOG("CreateMGStats: ActiveStages = default/unset\n");
                 mgStats->set_active_stages(activeStages);
             }
 

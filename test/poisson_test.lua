@@ -1,4 +1,4 @@
--- Copyright (c) 2010-2017:  G-CSC, Goethe University Frankfurt
+-- Copyright (c) 2010-2016:  G-CSC, Goethe University Frankfurt
 -- Authors: Andreas Vogel, Sebastian Reiter
 -- 
 -- This file is part of UG4.
@@ -30,31 +30,60 @@
 
 
 -- Load utility scripts (e.g. from from ugcore/scripts)
-ug_load_script("../lua/lua-include.lua")
+ug_load_script("../../../lua/lua-include.lua")
 ug_load_script("util/refinement_util.lua")
 
 -- Parse parameters and print help
-dim			= util.GetParamNumber("-dim", 3, "Dimension of the problem", {2,3})
-
-gridName	= util.GetParam("-grid", "grids/laplace_sphere_" .. dim .. "d.ugx",
+dim			= util.GetParamNumber("-dim", 2, "Dimension of the problem", {1,2,3})
+gridName	= util.GetParam("-grid", "../grids/laplace_sample_grid_"..dim.."d.ugx",
 							"filename of underlying grid")
-numRefs		= util.GetParamNumber("-numRefs", 4, "number of refinements")
+numRefs		= util.GetParamNumber("-numRefs", 3, "number of refinements")
+
+util.CheckAndPrintHelp("Poisson-Equation");
 
 
-util.CheckAndPrintHelp("Laplace-Problem");
-
-
--- initialize ug with the world dimension 2 and scalar matrix coefficients
+-- initialize ug with the world dimension and the algebra type
 InitUG(dim, AlgebraType("CPU", 1));
 
 
 -- Load a domain without initial refinements.
-requiredSubsets = {"Inner", "bndNegative", "bndPositive"}
+requiredSubsets = {"Inner", "Boundary"}
 dom = util.CreateDomain(gridName, 0, requiredSubsets)
 
 -- Refine the domain (redistribution is handled internally for parallel runs)
 print("refining...")
 util.refinement.CreateRegularHierarchy(dom, numRefs, true)
+
+
+-- callback functions for sources and boundary values (only the ones matching 'dim' are used)
+function Source1d(x, y, t)
+	local s = 2*math.pi
+	return s*s*math.sin(s*x)
+end
+
+function DirichletValue1d(x, y, t)
+	return true, math.sin(2*math.pi*x)
+end
+
+function Source2d(x, y, t)
+	local s = 2*math.pi
+	return s*s*(math.sin(s*x) + math.sin(s*y))
+end
+
+function DirichletValue2d(x, y, t)
+	local s = 2*math.pi
+	return true, math.sin(s*x) + math.sin(s*y)
+end
+
+function Source3d(x, y, z, t)
+	local s = 2*math.pi
+	return	s*s*(math.sin(s*x) + math.sin(s*y) + math.sin(s*z))
+end
+
+function DirichletValue3d(x, y, z, t)
+	local s = 2*math.pi
+	return true, math.sin(s*x) + math.sin(s*y) + math.sin(s*z)
+end
 
 -- set up approximation space
 approxSpace = ApproximationSpace(dom)
@@ -70,14 +99,12 @@ approxSpace:print_statistic()
 -- Please have a look at this page for more information on the
 -- ConvectionDiffusion discretization object:
 -- http://ug4.github.io/docs/plugins/classug_1_1_convection_diffusion_plugin_1_1_convection_diffusion_base.html#details
-
 elemDisc = ConvectionDiffusion("c", "Inner", "fv1")
-elemDisc:set_diffusion(ConstUserMatrix(1.0))
-elemDisc:set_source(0)
+elemDisc:set_diffusion(1.0)
+elemDisc:set_source("Source"..dim.."d")
 
 dirichletBND = DirichletBoundary()
-dirichletBND:add(-1, "c", "bndNegative")
-dirichletBND:add(1, "c", "bndPositive")
+dirichletBND:add("DirichletValue"..dim.."d", "c", "Boundary")
 
 domainDisc = DomainDiscretization(approxSpace)
 domainDisc:add(elemDisc)
@@ -94,12 +121,13 @@ solverDesc = {
 		baseSolver	= "lu"
 	}
 }
+
 local solverutil = SolverUtil()
 solverutil:setApproximationSpace("approxSpace",approxSpace)
 solver = util.test.CreateSolver(solverDesc,solverutil)
 
 
-print("\ntest_solving...")
+print("\nsolving...")
 A = AssembledLinearOperator(domainDisc)
 u = GridFunction(approxSpace)
 b = GridFunction(approxSpace)
@@ -111,9 +139,10 @@ solver:init(A, u)
 solver:apply(u, b)
 
 
-solFileName = "laplace_test_" .. dim .. "d"
+solFileName = "sol_poisson_"..dim.."d"
 print("writing solution to '" .. solFileName .. "'...")
 WriteGridFunctionToVTK(u, solFileName)
 SaveVectorForConnectionViewer(u, solFileName .. ".vec")
+
 
 print("done")

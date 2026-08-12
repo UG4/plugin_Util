@@ -30,7 +30,7 @@
 
 
 -- Load utility scripts (e.g. from from ugcore/scripts)
-ug_load_script("../lua/lua-include.lua")
+ug_load_script("ug_util.lua")
 ug_load_script("util/refinement_util.lua")
 
 -- Parse parameters and print help
@@ -89,17 +89,23 @@ solverDesc = {
 	type = "bicgstab",
 	precond = {
 		type		= "gmg",
-		--approxSpace	= approxSpace,
+		approxSpace	= approxSpace,
 		smoother	= "jac",
-		baseSolver	= "lu"
+		baseSolver	= "lu",
+		mgStats         = {
+                     type = "standard",
+                     filenamePrefix = "laplace_mgstats_test",
+                     exitOnError = false,
+                     writeErrVecs = false,
+                     writeErrDiffs = false
+                }
 	}
 }
-local solverutil = SolverUtil()
-solverutil:setApproximationSpace("approxSpace",approxSpace)
-solver = util.test.CreateSolver(solverDesc,solverutil)
+
+solver = util.solver.CreateSolver(solverDesc)
 
 
-print("\ntest_solving...")
+print("\nsolving...")
 A = AssembledLinearOperator(domainDisc)
 u = GridFunction(approxSpace)
 b = GridFunction(approxSpace)
@@ -111,7 +117,7 @@ solver:init(A, u)
 solver:apply(u, b)
 
 
-solFileName = "laplace_test_" .. dim .. "d"
+solFileName = "laplace_mgstats_custom_" .. dim .. "d"
 print("writing solution to '" .. solFileName .. "'...")
 WriteGridFunctionToVTK(u, solFileName)
 SaveVectorForConnectionViewer(u, solFileName .. ".vec")
