@@ -30,11 +30,11 @@
 
 
 -- Load utility scripts (e.g. from from ugcore/scripts)
-ug_load_script("../../../lua/lua-include.lua")
+ug_load_script("../lua/lua-include.lua")
 ug_load_script("util/refinement_util.lua")
 
 -- Parse parameters and print help
-gridName	= util.GetParam("-grid", "../grids/cooler.ugx",
+gridName	= util.GetParam("-grid", "grids/cooler.ugx",
 							"filename of underlying grid")
 numRefs		= util.GetParamNumber("-numRefs", 2, "number of refinements")
 
@@ -140,13 +140,13 @@ if steadyState then
 	solver:init(A, u)
 	solver:apply(u, b)
 
-	solFileName = "sol_cooler"
+	solFileName = "cooler_test"
 	print("writing solution to '" .. solFileName .. "'...")
 	WriteGridFunctionToVTK(u, solFileName)
 	SaveVectorForConnectionViewer(u, solFileName .. ".vec")
 else
 	local startTime = 0
-	util.SolveLinearTimeProblem(u, domainDisc, solver, VTKOutput(), "sol_cooler",
+	util.SolveLinearTimeProblem(u, domainDisc, solver, VTKOutput(), "cooler_test",
 								"ImplEuler", 1, startTime, endTime, dt); 
 end
 

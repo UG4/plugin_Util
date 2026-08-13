@@ -1,0 +1,511 @@
+********************************************************************************
+* ugshell - ug4.0.2, head revision 'unknown',                                  *
+*                    compiled 'Do 13. Aug 16:19:40 CEST 2026'                  *
+*                    on 'myrtopap-HP-Laptop-17-cn3xxx' (DEBUG).                *
+*                                                                              *
+* arguments:                                                                   *
+*   -outproc id:         Sets the output-proc to id. Default is 0.             *
+*   -ex scriptname:      Executes the specified script.                        *
+*   -noquit:             Runs the interactive shell after specified script.    *
+*   -quiet:              Disables printing of header and trailer.              *
+*   -help:               Print this help message and exit.                     *
+*   -noterm:             Terminal logging will be disabled.                    *
+*   -logtofile filename: Output will be written to the specified file.         *
+*   -call:               Combines all following arguments to one lua command   *
+*                        and executes it. Ignored if it follows '-ex'.         *
+*                        '(', ')', and '"' have to be escaped, e.g.: '\('      *
+* Additional parameters are passed to the script through ugargc and ugargv.    *
+*                                                                              *
+*                                                                              *
+* Initializing: paths... done, bridge...                                       *
+ 
+# Adding ConvCheckBuilderCPU1
+# Adding ConvCheckBuilderCPU2
+# Adding ConvCheckBuilderCPU3
+# Adding JacobiBuilderCPU1
+# Adding GaussSeidelBuilderCPU1
+# Adding SymmetricGaussSeidelBuilderCPU1
+# Adding BackwardGaussSeidelBuilderCPU1
+# Adding JacobiBuilderCPU2
+# Adding GaussSeidelBuilderCPU2
+# Adding SymmetricGaussSeidelBuilderCPU2
+# Adding BackwardGaussSeidelBuilderCPU2
+# Adding JacobiBuilderCPU3
+# Adding GaussSeidelBuilderCPU3
+# Adding SymmetricGaussSeidelBuilderCPU3
+# Adding BackwardGaussSeidelBuilderCPU3
+# Adding VTKOutputBuilder1d
+# Adding VTKOutputBuilder2d
+# Adding VTKOutputBuilder3d
+
+ ...Bridge initialization done.                                                *
+* Initializing: plugins... done                                                *
+********************************************************************************
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/ConvectionDiffusion/lua/lua-include.lua
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/JSONToolkit/lua/lua-include.lua
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/Limex/lua/lua-include.lua
+LIMEX-Plugin: Loading util.limex.*
+Loading Domain grids/cooler.ugx ... done.
+Performing integrity check on domain ... done.
+refining...
+
+util.refinement: - refining level 0
+util.refinement: - refining level 1
+approximation space:
+| ----------------------------------------------------------------------------------------------------------------------- |
+|  Number of DoFs (All Procs)                                                                                             |
+|  Algebra: Block 1 (divide by 1 for #Index)                                                                              |
+|                                                                                                                         |
+|    GridLevel   |       Domain |    0: cooler | 1: staticAir |       2: air |       3: cpu |    4: inflow |   5: outflow |
+| ----------------------------------------------------------------------------------------------------------------------- |
+| (lev,    0)    |          648 |           79 |           59 |          362 |           20 |           64 |           64 |
+| (lev,    1)    |         4335 |          766 |          584 |         2472 |           63 |          225 |          225 |
+| (lev,    2)    |        31581 |         6604 |         5192 |        17882 |          221 |          841 |          841 |
+| (lev,    0, g) |          648 |           79 |           59 |          362 |           20 |           64 |           64 |
+| (lev,    1, g) |         4335 |          766 |          584 |         2472 |           63 |          225 |          225 |
+| (lev,    2, g) |        31581 |         6604 |         5192 |        17882 |          221 |          841 |          841 |
+| (surf, top)    |        31581 |         6604 |         5192 |        17882 |          221 |          841 |          841 |
+| ----------------------------------------------------------------------------------------------------------------------- |
+| For Legend and Options: print_statistic("legend").                                                                      |
+| ----------------------------------------------------------------------------------------------------------------------- |
+
+[lua-include.lua] ### create Solver ### 
+
+
+[lua-include.lua] ### create LinearSolver ### 
+
+[lua-include.lua] function provider_CreateLinearSolver
+[solver_util.h] type solver is bicgstab
+[solver_util.h] CreatePreconditioner Geometric MultiGrid (GMG)
+[solver_util.h] gmg: ApproximationSpace found!
+[solver_util.h] CreateLinearSolver, type solver is lu 
+[solver_util.h] CreatePreconditioner ilu 
+
+ILU: please use 'set_ordering_algorithm(..)' in the future
+[solver_util.h] gmg: base_level found!
+[solver_util.h] gmg: CycleType found!
+[solver_util.h] gmg: presmooth found!
+[solver_util.h] gmg: postsmooth found!
+[solver_util.h] gmg: rap found!
+[solver_util.h] gmg: smooth_on_surface_rim found!
+[solver_util.h] gmg: emulate_full_refined_grid found!
+[solver_util.h] gmg: transfer started!
+[solver_util.h] gmg: gatheredBaseSolverIfAMb found!
+[solver_util.h] ******* gmg: mgStats begins... ********
+[solver_util.h] CreateConvCheck type = standard
+[solver_util.h] CreateConvCheck iterations = 100
+[solver_util.h] CreateConvCheck absolute = 1e-12
+[solver_util.h] CreateConvCheck reduction = 1e-06
+[solver_util.h] CreateConvCheck verbose = 1
+[solver_util.h] CreateConvCheck suppress_unsuccessful = 0
+BiCGStab( restart = 0, min_orthogonality = 0)
+ Convergence Check: StdConvCheck( max steps = 100, min defect = 1e-12, relative reduction = 1e-06)
+ Preconditioner: 
+ | GeometricMultigrid (V-Cycle)
+ |  Smoother (3x pre, 3x post): ILU( damping = ConstantDamping(1))
+ |  Basesolver ( Baselevel = 0, gathered base = false): AgglomeratingSolver: SuperLU
+
+
+solving...
+SolveLinearTimeProblem, Linear Solver setup:
+BiCGStab( restart = 0, min_orthogonality = 0)
+ Convergence Check: StdConvCheck( max steps = 100, min defect = 1e-12, relative reduction = 1e-06)
+ Preconditioner: 
+ | GeometricMultigrid (V-Cycle)
+ |  Smoother (3x pre, 3x post): ILU( damping = ConstantDamping(1))
+ |  Basesolver ( Baselevel = 0, gathered base = false): AgglomeratingSolver: SuperLU
+
+>> Writing start values
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 1 BEGIN (current time: 0) ++++++
+++++++ Time step size: 0.02
+++++++ Assembling Matrix/Rhs for step size 0.02
+after COLAMD_MAIN info 1
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    8.919641e+02      -------
+   %    1:    1.173578e-01    1.315723e-04
+   %    2:    5.264576e-03    4.485920e-02
+   %    3:    1.260328e-03    2.393977e-01
+   %    4:    5.899781e-05    4.681148e-02
+   % Relative reduction 1.000000e-06 reached after 4 steps.
+   % Average reduction over 4 steps: 1.603696e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 1 END   (current time: 0.02) ++++++
+++++++ TIMESTEP 2 BEGIN (current time: 0.02) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    4.145535e-01      -------
+   %    1:    3.216140e-02    7.758083e-02
+   %    2:    1.587325e-03    4.935497e-02
+   %    3:    1.216390e-04    7.663145e-02
+   %    4:    9.532454e-06    7.836675e-02
+   %    5:    7.741191e-07    8.120879e-02
+   %    6:    6.328026e-08    8.174487e-02
+   % Relative reduction 1.000000e-06 reached after 6 steps.
+   % Average reduction over 6 steps: 7.310515e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 2 END   (current time: 0.04) ++++++
+++++++ TIMESTEP 3 BEGIN (current time: 0.04) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    1.529386e-01      -------
+   %    1:    1.684023e-02    1.101110e-01
+   %    2:    8.427067e-04    5.004128e-02
+   %    3:    7.038769e-05    8.352573e-02
+   %    4:    4.616012e-06    6.557981e-02
+   %    5:    2.377572e-07    5.150706e-02
+   %    6:    2.375424e-08    9.990968e-02
+   % Relative reduction 1.000000e-06 reached after 6 steps.
+   % Average reduction over 6 steps: 7.331689e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 3 END   (current time: 0.06) ++++++
+++++++ TIMESTEP 4 BEGIN (current time: 0.06) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    9.168832e-02      -------
+   %    1:    1.137953e-02    1.241111e-01
+   %    2:    6.187480e-04    5.437375e-02
+   %    3:    3.958297e-05    6.397269e-02
+   %    4:    2.346809e-06    5.928834e-02
+   %    5:    1.138339e-07    4.850581e-02
+   %    6:    1.064147e-08    9.348244e-02
+   % Relative reduction 1.000000e-06 reached after 6 steps.
+   % Average reduction over 6 steps: 6.984166e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 4 END   (current time: 0.08) ++++++
+++++++ TIMESTEP 5 BEGIN (current time: 0.08) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    6.563139e-02      -------
+   %    1:    8.518707e-03    1.297962e-01
+   %    2:    4.800113e-04    5.634791e-02
+   %    3:    2.024177e-05    4.216935e-02
+   %    4:    1.331744e-06    6.579187e-02
+   %    5:    7.890091e-08    5.924632e-02
+   %    6:    7.620189e-09    9.657922e-02
+   % Relative reduction 1.000000e-06 reached after 6 steps.
+   % Average reduction over 6 steps: 6.984613e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 5 END   (current time: 0.1) ++++++
+++++++ TIMESTEP 6 BEGIN (current time: 0.1) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    5.153641e-02      -------
+   %    1:    6.774000e-03    1.314411e-01
+   %    2:    3.792433e-04    5.598513e-02
+   %    3:    1.118189e-05    2.948475e-02
+   %    4:    8.111589e-07    7.254218e-02
+   %    5:    5.690186e-08    7.014884e-02
+   %    6:    5.632898e-09    9.899322e-02
+   % Relative reduction 1.000000e-06 reached after 6 steps.
+   % Average reduction over 6 steps: 6.914641e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 6 END   (current time: 0.12) ++++++
+++++++ TIMESTEP 7 BEGIN (current time: 0.12) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    4.232425e-02      -------
+   %    1:    5.581823e-03    1.318824e-01
+   %    2:    3.068032e-04    5.496470e-02
+   %    3:    7.102659e-06    2.315053e-02
+   %    4:    5.364522e-07    7.552837e-02
+   %    5:    4.150083e-08    7.736164e-02
+   % Relative reduction 1.000000e-06 reached after 5 steps.
+   % Average reduction over 5 steps: 6.284830e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 7 END   (current time: 0.14) ++++++
+++++++ TIMESTEP 8 BEGIN (current time: 0.14) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    3.551772e-02      -------
+   %    1:    4.690643e-03    1.320648e-01
+   %    2:    2.536651e-04    5.407896e-02
+   %    3:    4.998744e-06    1.970608e-02
+   %    4:    3.789477e-07    7.580857e-02
+   %    5:    3.078056e-08    8.122642e-02
+   % Relative reduction 1.000000e-06 reached after 5 steps.
+   % Average reduction over 5 steps: 6.131494e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 8 END   (current time: 0.16) ++++++
+++++++ TIMESTEP 9 BEGIN (current time: 0.16) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    3.013502e-02      -------
+   %    1:    3.981664e-03    1.321274e-01
+   %    2:    2.129371e-04    5.347944e-02
+   %    3:    3.727019e-06    1.750291e-02
+   %    4:    2.797867e-07    7.506984e-02
+   %    5:    2.330594e-08    8.329893e-02
+   % Relative reduction 1.000000e-06 reached after 5 steps.
+   % Average reduction over 5 steps: 5.993479e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 9 END   (current time: 0.18) ++++++
+++++++ TIMESTEP 10 BEGIN (current time: 0.18) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    2.571787e-02      -------
+   %    1:    3.395277e-03    1.320201e-01
+   %    2:    1.803597e-04    5.312075e-02
+   %    3:    2.870526e-06    1.591556e-02
+   %    4:    2.127486e-07    7.411487e-02
+   %    5:    1.806080e-08    8.489267e-02
+   % Relative reduction 1.000000e-06 reached after 5 steps.
+   % Average reduction over 5 steps: 5.878959e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 10 END   (current time: 0.2) ++++++
+++++++ TIMESTEP 11 BEGIN (current time: 0.2) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    2.201583e-02      -------
+   %    1:    2.899289e-03    1.316911e-01
+   %    2:    1.534523e-04    5.292755e-02
+   %    3:    2.255079e-06    1.469564e-02
+   %    4:    1.651698e-07    7.324347e-02
+   %    5:    1.425068e-08    8.627892e-02
+   % Relative reduction 1.000000e-06 reached after 5 steps.
+   % Average reduction over 5 steps: 5.783891e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 11 END   (current time: 0.22) ++++++
+++++++ TIMESTEP 12 BEGIN (current time: 0.22) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    1.887398e-02      -------
+   %    1:    2.474783e-03    1.311214e-01
+   %    2:    1.307577e-04    5.283601e-02
+   %    3:    1.794597e-06    1.372460e-02
+   %    4:    1.302271e-07    7.256623e-02
+   %    5:    1.126304e-08    8.648770e-02
+   % Relative reduction 1.000000e-06 reached after 5 steps.
+   % Average reduction over 5 steps: 5.690605e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 12 END   (current time: 0.24) ++++++
+++++++ TIMESTEP 13 BEGIN (current time: 0.24) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    1.618739e-02      -------
+   %    1:    2.109535e-03    1.303197e-01
+   %    2:    1.113815e-04    5.279909e-02
+   %    3:    1.440615e-06    1.293406e-02
+   %    4:    1.038915e-07    7.211604e-02
+   %    5:    8.793897e-09    8.464504e-02
+   % Relative reduction 1.000000e-06 reached after 5 steps.
+   % Average reduction over 5 steps: 5.584714e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 13 END   (current time: 0.26) ++++++
+++++++ TIMESTEP 14 BEGIN (current time: 0.26) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    1.387999e-02      -------
+   %    1:    1.794832e-03    1.293108e-01
+   %    2:    9.473797e-05    5.278374e-02
+   %    3:    1.163326e-06    1.227940e-02
+   %    4:    8.362795e-08    7.188696e-02
+   %    5:    6.870116e-09    8.215095e-02
+   % Relative reduction 1.000000e-06 reached after 5 steps.
+   % Average reduction over 5 steps: 5.481697e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 14 END   (current time: 0.28) ++++++
+++++++ TIMESTEP 15 BEGIN (current time: 0.28) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    1.189370e-02      -------
+   %    1:    1.523899e-03    1.281266e-01
+   %    2:    8.041224e-05    5.276744e-02
+   %    3:    9.432125e-07    1.172971e-02
+   %    4:    6.777192e-08    7.185222e-02
+   %    5:    5.578244e-09    8.230908e-02
+   % Relative reduction 1.000000e-06 reached after 5 steps.
+   % Average reduction over 5 steps: 5.422956e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 15 END   (current time: 0.3) ++++++
+++++++ TIMESTEP 16 BEGIN (current time: 0.3) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    1.018230e-02      -------
+   %    1:    1.291112e-03    1.267996e-01
+   %    2:    6.808710e-05    5.273525e-02
+   %    3:    7.668614e-07    1.126295e-02
+   %    4:    5.519480e-08    7.197494e-02
+   %    5:    4.786521e-09    8.672050e-02
+   % Relative reduction 1.000000e-06 reached after 5 steps.
+   % Average reduction over 5 steps: 5.425438e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 16 END   (current time: 0.32) ++++++
+++++++ TIMESTEP 17 BEGIN (current time: 0.32) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    8.707790e-03      -------
+   %    1:    1.091612e-03    1.253604e-01
+   %    2:    5.750372e-05    5.267778e-02
+   %    3:    6.246709e-07    1.086314e-02
+   %    4:    4.511034e-08    7.221457e-02
+   %    5:    4.234272e-09    9.386477e-02
+   % Relative reduction 1.000000e-06 reached after 5 steps.
+   % Average reduction over 5 steps: 5.462282e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 17 END   (current time: 0.34) ++++++
+++++++ TIMESTEP 18 BEGIN (current time: 0.34) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    7.438182e-03      -------
+   %    1:    9.211156e-04    1.238361e-01
+   %    2:    4.844107e-05    5.258957e-02
+   %    3:    5.095310e-07    1.051857e-02
+   %    4:    3.695672e-08    7.253086e-02
+   %    5:    3.748878e-09    1.014397e-01
+   % Relative reduction 1.000000e-06 reached after 5 steps.
+   % Average reduction over 5 steps: 5.501573e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 18 END   (current time: 0.36) ++++++
+++++++ TIMESTEP 19 BEGIN (current time: 0.36) ++++++
+++++++ Time step size: 0.02
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    6.346111e-03      -------
+   %    1:    7.758100e-04    1.222497e-01
+   %    2:    4.070520e-05    5.246800e-02
+   %    3:    4.160290e-07    1.022054e-02
+   %    4:    3.032267e-08    7.288595e-02
+   %    5:    3.276860e-09    1.080663e-01
+   % Relative reduction 1.000000e-06 reached after 5 steps.
+   % Average reduction over 5 steps: 5.528280e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 19 END   (current time: 0.38) ++++++
+++++++ TIMESTEP 20 BEGIN (current time: 0.38) ++++++
+++++++ Time step size: 0.02
+++++++ Assembling Matrix/Rhs for step size 0.02
+after COLAMD_MAIN info 1
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    5.407909e-03      -------
+   %    1:    6.523048e-04    1.206205e-01
+   %    2:    3.412366e-05    5.231244e-02
+   %    3:    3.399551e-07    9.962447e-03
+   %    4:    2.490023e-08    7.324564e-02
+   %    5:    2.820886e-09    1.132876e-01
+   % Relative reduction 1.000000e-06 reached after 5 steps.
+   % Average reduction over 5 steps: 5.539509e-02
+   % %%%%%  Iteration converged  %%%%%
+
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+++++++ TIMESTEP 20 END   (current time: 0.4) ++++++
+done
+
+

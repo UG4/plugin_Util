@@ -1,4 +1,6 @@
 *.vec
 *.vtu
+*.pvd
 .idea/
 *:Zone.Identifier
+output/

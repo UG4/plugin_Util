@@ -1,0 +1,95 @@
+********************************************************************************
+* ugshell - ug4.0.2, head revision 'unknown',                                  *
+*                    compiled 'Do 13. Aug 16:19:40 CEST 2026'                  *
+*                    on 'myrtopap-HP-Laptop-17-cn3xxx' (DEBUG).                *
+*                                                                              *
+* arguments:                                                                   *
+*   -outproc id:         Sets the output-proc to id. Default is 0.             *
+*   -ex scriptname:      Executes the specified script.                        *
+*   -noquit:             Runs the interactive shell after specified script.    *
+*   -quiet:              Disables printing of header and trailer.              *
+*   -help:               Print this help message and exit.                     *
+*   -noterm:             Terminal logging will be disabled.                    *
+*   -logtofile filename: Output will be written to the specified file.         *
+*   -call:               Combines all following arguments to one lua command   *
+*                        and executes it. Ignored if it follows '-ex'.         *
+*                        '(', ')', and '"' have to be escaped, e.g.: '\('      *
+* Additional parameters are passed to the script through ugargc and ugargv.    *
+*                                                                              *
+*                                                                              *
+* Initializing: paths... done, bridge...                                       *
+ 
+# Adding ConvCheckBuilderCPU1
+# Adding ConvCheckBuilderCPU2
+# Adding ConvCheckBuilderCPU3
+# Adding JacobiBuilderCPU1
+# Adding GaussSeidelBuilderCPU1
+# Adding SymmetricGaussSeidelBuilderCPU1
+# Adding BackwardGaussSeidelBuilderCPU1
+# Adding JacobiBuilderCPU2
+# Adding GaussSeidelBuilderCPU2
+# Adding SymmetricGaussSeidelBuilderCPU2
+# Adding BackwardGaussSeidelBuilderCPU2
+# Adding JacobiBuilderCPU3
+# Adding GaussSeidelBuilderCPU3
+# Adding SymmetricGaussSeidelBuilderCPU3
+# Adding BackwardGaussSeidelBuilderCPU3
+# Adding VTKOutputBuilder1d
+# Adding VTKOutputBuilder2d
+# Adding VTKOutputBuilder3d
+
+ ...Bridge initialization done.                                                *
+* Initializing: plugins... done                                                *
+********************************************************************************
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/ConvectionDiffusion/lua/lua-include.lua
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/JSONToolkit/lua/lua-include.lua
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/Limex/lua/lua-include.lua
+LIMEX-Plugin: Loading util.limex.*
+Loading Domain ../grids/laplace_sample_grid_2d.ugx ... done.
+Performing integrity check on domain ... done.
+refining...
+
+util.refinement: - refining level 0
+util.refinement: - refining level 1
+util.refinement: - refining level 2
+approximation space:
+| ---------------------------------------------------------------------------- |
+|  Number of DoFs (All Procs)                                                  |
+|  Algebra: Block 1 (divide by 1 for #Index)                                   |
+|                                                                              |
+|    GridLevel   |       Domain |     0: Inner |  1: Boundary                  |
+| ---------------------------------------------------------------------------- |
+| (lev,    0)    |            9 |            1 |            8 |
+| (lev,    1)    |           25 |            9 |           16 |
+| (lev,    2)    |           81 |           49 |           32 |
+| (lev,    3)    |          289 |          225 |           64 |
+| (lev,    0, g) |            9 |            1 |            8 |
+| (lev,    1, g) |           25 |            9 |           16 |
+| (lev,    2, g) |           81 |           49 |           32 |
+| (lev,    3, g) |          289 |          225 |           64 |
+| (surf, top)    |          289 |          225 |           64 |
+| ---------------------------------------------------------------------------- |
+| For Legend and Options: print_statistic("legend").                           |
+| ---------------------------------------------------------------------------- |
+
+solving...
+after COLAMD_MAIN info 1
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    6.694179e+00      -------
+   %    1:    1.706389e-01    2.549063e-02
+   %    2:    6.359160e-03    3.726678e-02
+   %    3:    1.343772e-04    2.113127e-02
+   %    4:    5.155542e-06    3.836621e-02
+   % Relative reduction 1.000000e-06 reached after 4 steps.
+   % Average reduction over 4 steps: 2.962404e-02
+   % %%%%%  Iteration converged  %%%%%
+
+writing solution to 'poisson_2d'...
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+done
+
+

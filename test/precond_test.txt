@@ -1,0 +1,257 @@
+********************************************************************************
+* ugshell - ug4.0.2, head revision 'unknown',                                  *
+*                    compiled 'Do 13. Aug 16:19:40 CEST 2026'                  *
+*                    on 'myrtopap-HP-Laptop-17-cn3xxx' (DEBUG).                *
+*                                                                              *
+* arguments:                                                                   *
+*   -outproc id:         Sets the output-proc to id. Default is 0.             *
+*   -ex scriptname:      Executes the specified script.                        *
+*   -noquit:             Runs the interactive shell after specified script.    *
+*   -quiet:              Disables printing of header and trailer.              *
+*   -help:               Print this help message and exit.                     *
+*   -noterm:             Terminal logging will be disabled.                    *
+*   -logtofile filename: Output will be written to the specified file.         *
+*   -call:               Combines all following arguments to one lua command   *
+*                        and executes it. Ignored if it follows '-ex'.         *
+*                        '(', ')', and '"' have to be escaped, e.g.: '\('      *
+* Additional parameters are passed to the script through ugargc and ugargv.    *
+*                                                                              *
+*                                                                              *
+* Initializing: paths... done, bridge...                                       *
+ 
+# Adding ConvCheckBuilderCPU1
+# Adding ConvCheckBuilderCPU2
+# Adding ConvCheckBuilderCPU3
+# Adding JacobiBuilderCPU1
+# Adding GaussSeidelBuilderCPU1
+# Adding SymmetricGaussSeidelBuilderCPU1
+# Adding BackwardGaussSeidelBuilderCPU1
+# Adding JacobiBuilderCPU2
+# Adding GaussSeidelBuilderCPU2
+# Adding SymmetricGaussSeidelBuilderCPU2
+# Adding BackwardGaussSeidelBuilderCPU2
+# Adding JacobiBuilderCPU3
+# Adding GaussSeidelBuilderCPU3
+# Adding SymmetricGaussSeidelBuilderCPU3
+# Adding BackwardGaussSeidelBuilderCPU3
+# Adding VTKOutputBuilder1d
+# Adding VTKOutputBuilder2d
+# Adding VTKOutputBuilder3d
+
+ ...Bridge initialization done.                                                *
+* Initializing: plugins... done                                                *
+********************************************************************************
+[precond_test] load script
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/ConvectionDiffusion/lua/lua-include.lua
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/JSONToolkit/lua/lua-include.lua
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/Limex/lua/lua-include.lua
+LIMEX-Plugin: Loading util.limex.*
+Loading Domain grids/grid.ugx ... done.
+Performing integrity check on domain ... done.
+Refining(1): 1 done.
+ ---------------------------------------------------------------- 
+ | No DoFDistributions created.                                 | 
+ | NOTE: DoFDistributions are created only on request.          | 
+ |       However, you may force creation using:                 | 
+ |        - ApproximationSpace::init_levels()                   | 
+ |        - ApproximationSpace::init_surfaces()                 | 
+ |        - ApproximationSpace::init_top_surface()              | 
+ ---------------------------------------------------------------- 
+
+[>>>precond_test<<<] type(gmgDesc['approxSpace']): nil
+
+[>>> precond_test <<<] 
+gmgDesc: 
+     type = gmg
+     debug = false
+     rim = false
+     baseSolver = lu
+     preSmooth = 3
+     smoother = {
+        type = sgs
+     }
+     cycle = V
+     transfer = std
+     baseLevel = 0
+     postSmooth = 3
+     rap = false
+     emulateFullRefined = false
+     gatheredBaseSolverIfAmbiguous = false
+
+[>>>precond_test<<<] initialize solverutil ..
+
+[>>>precond_test<<<] calling CreatePreconditioner
+
+[lua-include.lua] ### create Preconditioner ###
+[lua-include.lua] Lua descriptor:
+                 damping = 0.3
+                 type = ilu
+                 overlap = true
+
+[lua-include.lua] JSON passed to C++:
+                 {"damping":0.3,"overlap":true,"type":"ilu"}
+
+[lua-include.lua] create function provider
+[solver_util.h] CreatePreconditioner ilu 
+
+ILU: please use 'set_ordering_algorithm(..)' in the future
+
+[lua-include.lua] resulting configuration:
+  ILU( damping = ConstantDamping(0.3))
+
+[>>>precond_test<<<] ilu(config_string):
+ILU( damping = ConstantDamping(0.3))
+
+[lua-include.lua] ### create Preconditioner ###
+[lua-include.lua] Lua descriptor:
+                 damping = 0.66
+                 type = jac
+
+[lua-include.lua] JSON passed to C++:
+                 {"damping":0.66,"type":"jac"}
+
+[lua-include.lua] create function provider
+[solver_util.h] CreatePreconditioner jacobi 
+[solver_util.h] jacobi, set damping
+
+[lua-include.lua] resulting configuration:
+  Jacobi( damping = ConstantDamping(0.66))
+
+[>>>precond_test<<<] jac(config_string):
+Jacobi( damping = ConstantDamping(0.66))
+
+[lua-include.lua] ### create Preconditioner ###
+[lua-include.lua] Lua descriptor:
+                 type = gs
+                 overlap = false
+                 consistentInterfaces = false
+
+[lua-include.lua] JSON passed to C++:
+                 {"consistentInterfaces":false,"overlap":false,"type":"gs"}
+
+[lua-include.lua] create function provider
+[solver_util.h] CreatePreconditioner gauss seidel
+
+[lua-include.lua] resulting configuration:
+  Gauss-Seidel( damping = ConstantDamping(1))
+
+[>>>precond_test<<<] gs(config_string):
+Gauss-Seidel( damping = ConstantDamping(1))
+
+[lua-include.lua] ### create Preconditioner ###
+[lua-include.lua] Lua descriptor:
+                 type = sgs
+                 overlap = false
+                 consistentInterfaces = false
+
+[lua-include.lua] JSON passed to C++:
+                 {"consistentInterfaces":false,"overlap":false,"type":"sgs"}
+
+[lua-include.lua] create function provider
+[solver_util.h] CreatePreconditioner symmetric gauss seidel
+
+[lua-include.lua] resulting configuration:
+  Symmetric Gauss-Seidel( damping = ConstantDamping(1))
+
+[>>>precond_test<<<] sgs(config_string):
+Symmetric Gauss-Seidel( damping = ConstantDamping(1))
+
+[lua-include.lua] ### create Preconditioner ###
+[lua-include.lua] Lua descriptor:
+                 type = egs
+
+[lua-include.lua] JSON passed to C++:
+                 {"type":"egs"}
+
+[lua-include.lua] create function provider
+[solver_util.h] CreatePreconditioner element gauss seidel
+
+[lua-include.lua] resulting configuration:
+  ElementGaussSeidel( damping = ConstantDamping(1))
+
+[>>>precond_test<<<] egs(config_string):
+ElementGaussSeidel( damping = ConstantDamping(1))
+
+[lua-include.lua] ### create Preconditioner ###
+[lua-include.lua] Lua descriptor:
+                 type = cgs
+                 relax = 1
+                 weights = false
+                 alpha = 1
+                 beta = 1
+
+[lua-include.lua] JSON passed to C++:
+                 {"alpha":1,"beta":1,"relax":1,"type":"cgs","weights":false}
+
+[lua-include.lua] create function provider
+[solver_util.h] CreatePreconditioner component gauss seidel
+[solver_util.h] cgs: set alpha
+[solver_util.h] cgs: set beta
+[solver_util.h] cgs: enable weights
+
+[lua-include.lua] resulting configuration:
+  ComponentGaussSeidel( damping = ConstantDamping(1))
+
+[>>>precond_test<<<] cgs(config_string):
+ComponentGaussSeidel( damping = ConstantDamping(1))
+
+[lua-include.lua] ### create Preconditioner ###
+[lua-include.lua] Lua descriptor:
+                 type = gmg
+                 debug = false
+                 rim = false
+                 baseSolver = lu
+                 preSmooth = 3
+                 smoother = {
+                     type = sgs
+                 }
+                 cycle = V
+                 transfer = std
+                 baseLevel = 0
+                 postSmooth = 3
+                 rap = false
+                 emulateFullRefined = false
+                 gatheredBaseSolverIfAmbiguous = false
+
+[lua-include.lua] JSON passed to C++:
+                 {"baseLevel":0,"baseSolver":"lu","cycle":"V","debug":false,"emulateFullRefined":false,"gatheredBaseSolverIfAmbiguous":false,"postSmooth":3,"preSmooth":3,"rap":false,"rim":false,"smoother":{"type":"sgs"},"transfer":"std","type":"gmg"}
+
+[lua-include.lua] create function provider
+[solver_util.h] CreatePreconditioner Geometric MultiGrid (GMG)
+[solver_util.h] gmg: ApproximationSpace found!
+[solver_util.h] CreateLinearSolver, type solver is lu 
+[solver_util.h] CreatePreconditioner symmetric gauss seidel
+[solver_util.h] gmg: base_level found!
+[solver_util.h] gmg: CycleType found!
+[solver_util.h] gmg: presmooth found!
+[solver_util.h] gmg: postsmooth found!
+[solver_util.h] gmg: rap found!
+[solver_util.h] gmg: smooth_on_surface_rim found!
+[solver_util.h] gmg: emulate_full_refined_grid found!
+[solver_util.h] gmg: transfer started!
+[solver_util.h] gmg: gatheredBaseSolverIfAMb found!
+[solver_util.h] ******* gmg: mgStats begins... ********
+
+[lua-include.lua] resulting configuration:
+  GeometricMultigrid (V-Cycle)
+ Smoother (3x pre, 3x post): Symmetric Gauss-Seidel( damping = ConstantDamping(1))
+ Basesolver ( Baselevel = 0, gathered base = false): AgglomeratingSolver: SuperLU
+
+[>>>precond_test<<<] gmg:(config_string):
+GeometricMultigrid (V-Cycle)
+ Smoother (3x pre, 3x post): Symmetric Gauss-Seidel( damping = ConstantDamping(1))
+ Basesolver ( Baselevel = 0, gathered base = false): AgglomeratingSolver: SuperLU
+
+[lua-include.lua] ### create LineSearch ### 
+
+                    |{"acceptBest":true,"checkAll":false,"lambdaReduce":0.4,"lambdaStart":1,"maxSteps":5,"type":"standard","verbose":true}|
+
+LUA ERROR! Could not find member function "config_string" of class StandardLineSearchCPU1. 
+LUA-ERROR! Call stack:
+   1  @./../lua/lua-include.lua:122   print(ls:config_string())                                 
+   2  @precond_test.lua:115           local ls = util.test.CreateLineSearch(lineSearchDesc)     
+LUA-ERROR: 
+./../lua/lua-include.lua:122: attempt to call (uninitialized or missspelled) method 'config_string' (a nil value)
+ % ABORTING script parsing.
+
+

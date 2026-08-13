@@ -36,7 +36,7 @@ ug_load_script("util/refinement_util.lua")
 -- Parse parameters and print help
 dim			= util.GetParamNumber("-dim", 3, "Dimension of the problem", {2,3})
 
-gridName	= util.GetParam("-grid", "grids/laplace_sphere_" .. dim .. "d.ugx",
+gridName	= util.GetParam("-grid", "../grids/laplace_sphere_" .. dim .. "d.ugx",
 							"filename of underlying grid")
 numRefs		= util.GetParamNumber("-numRefs", 4, "number of refinements")
 
@@ -92,13 +92,7 @@ solverDesc = {
 		approxSpace	= approxSpace,
 		smoother	= "jac",
 		baseSolver	= "lu",
-		mgStats         = {
-                     type = "standard",
-                     filenamePrefix = "laplace_mgstats_test",
-                     exitOnError = false,
-                     writeErrVecs = false,
-                     writeErrDiffs = false
-                }
+		mgStats         = "standard"
 	}
 }
 
@@ -117,7 +111,7 @@ solver:init(A, u)
 solver:apply(u, b)
 
 
-solFileName = "laplace_mgstats_custom_" .. dim .. "d"
+solFileName = "laplace_mgstats_standard_" .. dim .. "d"
 print("writing solution to '" .. solFileName .. "'...")
 WriteGridFunctionToVTK(u, solFileName)
 SaveVectorForConnectionViewer(u, solFileName .. ".vec")

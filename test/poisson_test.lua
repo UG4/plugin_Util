@@ -30,12 +30,12 @@
 
 
 -- Load utility scripts (e.g. from from ugcore/scripts)
-ug_load_script("../../../lua/lua-include.lua")
+ug_load_script("../lua/lua-include.lua")
 ug_load_script("util/refinement_util.lua")
 
 -- Parse parameters and print help
 dim			= util.GetParamNumber("-dim", 2, "Dimension of the problem", {1,2,3})
-gridName	= util.GetParam("-grid", "../grids/laplace_sample_grid_"..dim.."d.ugx",
+gridName	= util.GetParam("-grid", "grids/laplace_sample_grid_"..dim.."d.ugx",
 							"filename of underlying grid")
 numRefs		= util.GetParamNumber("-numRefs", 3, "number of refinements")
 
@@ -139,7 +139,7 @@ solver:init(A, u)
 solver:apply(u, b)
 
 
-solFileName = "sol_poisson_"..dim.."d"
+solFileName = "poisson_test_"..dim.."d"
 print("writing solution to '" .. solFileName .. "'...")
 WriteGridFunctionToVTK(u, solFileName)
 SaveVectorForConnectionViewer(u, solFileName .. ".vec")

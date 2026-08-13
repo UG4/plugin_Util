@@ -1,14 +1,11 @@
-print("load script")
+print("[precond_test] load script")
 ug_load_script("ug_util.lua")
-<<<<<<<< HEAD:test/precond/test_case/precond.lua
-ug_load_script("../../../lua/lua-include.lua")
-========
+
 ug_load_script("../lua/lua-include.lua")
->>>>>>>> dev-merge-review:test/precond_test.lua
 InitUG(2, AlgebraType("CPU", 1))
 local iluDesc ={
 	type = "ilu",
-	damping = 0.1,
+	damping = 0.3,
 	overlap = true
 }
 local jacDesc ={
@@ -29,39 +26,27 @@ local egsDesc = {
 	type = "egs"
 }
 
-<<<<<<<< HEAD:test/precond/test_case/precond.lua
-dom = util.CreateDomain("../grids/grid.ugx", 1, {})
+
+dom = util.CreateDomain("grids/grid.ugx", 1, {})
 approxSpace = ApproximationSpace(dom)
-approxSpace:print_statistic()
-local gmgDesc = 
-{
-	type = "gmg",
-    --approxSpace = approxSpace,
-========
-dom = util.CreateDomain("grid.ugx", 1, {})
-approxSpace = ApproximationSpace(dom)
-local gmgDesc = 
-{
+local gmgDesc = {
 	type = "gmg",
 	-- approxSpace = approxSpace,
->>>>>>>> dev-merge-review:test/precond_test.lua
 	smoother = {type = "sgs"},
-	preSmooth = 1,
-	postSmooth = 1, 
 	baseLevel = 0,
 	baseSolver = "lu",
 	rap = false,
-    cycle = "V",
-    --"discretization" = null,
-    gatheredBaseSolverIfAmbiguous = false,
-    preSmooth = 3,
-    postSmooth = 3,
-    rap = false,
-    rim = false,
-    emulateFullRefined = false,
-    transfer = "std",
-    debug = false,
-    mgStats = null
+        cycle = "V",
+        --"discretization" = null,
+        gatheredBaseSolverIfAmbiguous = false,
+        preSmooth = 3,
+        postSmooth = 3,
+        rap = false,
+        rim = false,
+        emulateFullRefined = false,
+        transfer = "std",
+        debug = false,
+        mgStats = null
 }
 
 local cgsDesc = {
@@ -71,59 +56,60 @@ local cgsDesc = {
 	weights = false,
 	relax = 1.0	
 }
-<<<<<<<< HEAD:test/precond/test_case/precond.lua
---approxSpace:print_statistic()
---print(type(gmgDesc["approxSpace"]))
---print(require("json").encode(gmgDesc))
---for key, value in pairs(gmgDesc) do
---    if value == nil then
---       print("Fehlender Wert für Schlüssel:", key)
---    end
---end
-========
+
 approxSpace:print_statistic()
-print(type(gmgDesc["approxSpace"]))
-print(require("json").encode(gmgDesc))
+
+print("\n[>>>precond_test<<<] type(gmgDesc['approxSpace']): ", type(gmgDesc["approxSpace"]), "\n")
+
+print("[>>> precond_test <<<] \ngmgDesc: ")
+
 for key, value in pairs(gmgDesc) do
-    if value == nil then
-        print("Fehlender Wert für Schlüssel:", key)
+    if type(value)  == "table" then
+        print("     " .. key .. " = {")
+        for subKey, subValue in pairs(value) do
+            print("        " .. subKey .. " = " .. tostring(subValue))
+        end
+        print("     }")
+    else
+        print("     " .. key .. " = " .. tostring(value))
     end
 end
->>>>>>>> dev-merge-review:test/precond_test.lua
+
 
 local solverutil = SolverUtil()
+print("\n[>>>precond_test<<<] initialize solverutil ..")
 solverutil:setApproximationSpace("approxSpace",approxSpace)
-print("calling CreatePreconditioner (ilu)")
+
+print("\n[>>>precond_test<<<] calling CreatePreconditioner")
 local precond = util.test.CreatePreconditioner(iluDesc, solverutil)
-print("ilu: "..precond:config_string())
+print("\n[>>>precond_test<<<] ilu(config_string):\n"..precond:config_string())
+
 local precond = util.test.CreatePreconditioner(jacDesc, solverutil)
-print("jac: "..precond:config_string())
+print("\n[>>>precond_test<<<] jac(config_string):\n"..precond:config_string())
+
 local precond = util.test.CreatePreconditioner(gsDesc, solverutil)
-print("gs: "..precond:config_string())
+print("\n[>>>precond_test<<<] gs(config_string):\n"..precond:config_string())
+
 local precond = util.test.CreatePreconditioner(sgsDesc, solverutil)
-print("sgs: "..precond:config_string())
+print("\n[>>>precond_test<<<] sgs(config_string):\n"..precond:config_string())
+
 local precond = util.test.CreatePreconditioner(egsDesc, solverutil)
-print("egs: "..precond:config_string())
+print("\n[>>>precond_test<<<] egs(config_string):\n"..precond:config_string())
+
 local precond = util.test.CreatePreconditioner(cgsDesc, solverutil)
-print("cgs: "..precond:config_string())
+print("\n[>>>precond_test<<<] cgs(config_string):\n"..precond:config_string())
+
 local precond = util.test.CreatePreconditioner(gmgDesc,solverutil)
-print("gmg: "..precond:config_string())
+print("\n[>>>precond_test<<<] gmg:(config_string):\n"..precond:config_string())
+
 local lineSearchDesc = {
                        	type			= "standard",
                        	maxSteps		= 5,
                        	lambdaStart		= 1,
                        	lambdaReduce		= 0.4,
-<<<<<<<< HEAD:test/precond/test_case/precond.lua
-                      	acceptBest 		= true,
-                      	checkAll		= false,
-                       	verbose         = true,
-                       }
---local ls = util.test.CreateLineSearch(lineSearchDesc)
-========
+
                        	acceptBest 		= true,
                        	checkAll		= false,
                        	verbose         = true,
                        }
 local ls = util.test.CreateLineSearch(lineSearchDesc)
->>>>>>>> dev-merge-review:test/precond_test.lua
-
