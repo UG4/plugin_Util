@@ -1,0 +1,113 @@
+********************************************************************************
+* ugshell - ug4.0.2, head revision 'unknown',                                  *
+*                    compiled 'Do 13. Aug 17:16:40 CEST 2026'                  *
+*                    on 'myrtopap-HP-Laptop-17-cn3xxx' (DEBUG).                *
+*                                                                              *
+* arguments:                                                                   *
+*   -outproc id:         Sets the output-proc to id. Default is 0.             *
+*   -ex scriptname:      Executes the specified script.                        *
+*   -noquit:             Runs the interactive shell after specified script.    *
+*   -quiet:              Disables printing of header and trailer.              *
+*   -help:               Print this help message and exit.                     *
+*   -noterm:             Terminal logging will be disabled.                    *
+*   -logtofile filename: Output will be written to the specified file.         *
+*   -call:               Combines all following arguments to one lua command   *
+*                        and executes it. Ignored if it follows '-ex'.         *
+*                        '(', ')', and '"' have to be escaped, e.g.: '\('      *
+* Additional parameters are passed to the script through ugargc and ugargv.    *
+*                                                                              *
+*                                                                              *
+* Initializing: paths... done, bridge...                                       *
+ 
+# Adding ConvCheckBuilderCPU1
+# Adding ConvCheckBuilderCPU2
+# Adding ConvCheckBuilderCPU3
+# Adding JacobiBuilderCPU1
+# Adding GaussSeidelBuilderCPU1
+# Adding SymmetricGaussSeidelBuilderCPU1
+# Adding BackwardGaussSeidelBuilderCPU1
+# Adding JacobiBuilderCPU2
+# Adding GaussSeidelBuilderCPU2
+# Adding SymmetricGaussSeidelBuilderCPU2
+# Adding BackwardGaussSeidelBuilderCPU2
+# Adding JacobiBuilderCPU3
+# Adding GaussSeidelBuilderCPU3
+# Adding SymmetricGaussSeidelBuilderCPU3
+# Adding BackwardGaussSeidelBuilderCPU3
+# Adding VTKOutputBuilder1d
+# Adding VTKOutputBuilder2d
+# Adding VTKOutputBuilder3d
+
+ ...Bridge initialization done.                                                *
+* Initializing: plugins... done                                                *
+********************************************************************************
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/ConvectionDiffusion/lua/lua-include.lua
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/JSONToolkit/lua/lua-include.lua
+Loading Plugin Lua Content from /home/myrtopap/ug4/plugins/Limex/lua/lua-include.lua
+LIMEX-Plugin: Loading util.limex.*
+Loading Domain ../grids/laplace_sphere_3d.ugx ... done.
+Performing integrity check on domain ... done.
+refining...
+
+util.refinement: - refining level 0
+util.refinement: - refining level 1
+util.refinement: - refining level 2
+util.refinement: - refining level 3
+approximation space:
+| ---------------------------------------------------------------------------- |
+|  Number of DoFs (All Procs)                                                  |
+|  Algebra: Block 1 (divide by 1 for #Index)                                   |
+|                                                                              |
+|    GridLevel   |       Domain |     0: Inner | 1: bndPosi.. | 2: bndNega..   |
+| ---------------------------------------------------------------------------- |
+| (lev,    0)    |           13 |            1 |           12 |            0 |
+| (lev,    1)    |           55 |           13 |           39 |            3 |
+| (lev,    2)    |          309 |          147 |          123 |           39 |
+| (lev,    3)    |         2057 |         1415 |          411 |          231 |
+| (lev,    4)    |        14993 |        12431 |         1467 |         1095 |
+| (lev,    0, g) |           13 |            1 |           12 |            0 |
+| (lev,    1, g) |           55 |           13 |           39 |            3 |
+| (lev,    2, g) |          309 |          147 |          123 |           39 |
+| (lev,    3, g) |         2057 |         1415 |          411 |          231 |
+| (lev,    4, g) |        14993 |        12431 |         1467 |         1095 |
+| (surf, top)    |        14993 |        12431 |         1467 |         1095 |
+| ---------------------------------------------------------------------------- |
+| For Legend and Options: print_statistic("legend").                           |
+| ---------------------------------------------------------------------------- |
+
+solving...
+after COLAMD_MAIN info 1
+
+   % %%%%%%%%             BiCGStab              %%%%%%%%%%%
+   % %%%%%%%%   (Precond: Geometric MultiGrid)  %%%%%%%%%%%
+   %   Iter      Defect         Rate 
+   %    0:    4.213050e+00      -------
+    >>> mg-stats row: 0
+MGStats: Defect deteriorated on level 4 between stages 'AFTER_PRE_SMOOTH' and 'BEFORE_POST_SMOOTH'. (MGStats row: 15)
+   %    1:    2.334891e-01    5.542045e-02
+    >>> mg-stats row: 17
+MGStats: Defect deteriorated on level 3 between stages 'AFTER_PRE_SMOOTH' and 'BEFORE_POST_SMOOTH'. (MGStats row: 30)
+MGStats: Defect deteriorated on level 4 between stages 'AFTER_PRE_SMOOTH' and 'BEFORE_POST_SMOOTH'. (MGStats row: 32)
+   %    2:    2.115739e-02    9.061402e-02
+    >>> mg-stats row: 34
+MGStats: Defect deteriorated on level 3 between stages 'AFTER_PRE_SMOOTH' and 'BEFORE_POST_SMOOTH'. (MGStats row: 47)
+MGStats: Defect deteriorated on level 4 between stages 'AFTER_PRE_SMOOTH' and 'BEFORE_POST_SMOOTH'. (MGStats row: 49)
+   %    3:    1.704987e-03    8.058591e-02
+    >>> mg-stats row: 51
+MGStats: Defect deteriorated on level 3 between stages 'AFTER_PRE_SMOOTH' and 'BEFORE_POST_SMOOTH'. (MGStats row: 64)
+MGStats: Defect deteriorated on level 4 between stages 'AFTER_PRE_SMOOTH' and 'BEFORE_POST_SMOOTH'. (MGStats row: 66)
+   %    4:    1.154060e-04    6.768734e-02
+    >>> mg-stats row: 68
+   %    5:    1.089210e-05    9.438064e-02
+    >>> mg-stats row: 85
+   %    6:    1.383130e-06    1.269848e-01
+   % Relative reduction 1.000000e-06 reached after 6 steps.
+   % Average reduction over 6 steps: 8.305729e-02
+   % %%%%%  Iteration converged  %%%%%
+
+writing solution to 'laplace_mgstats_custom_3d'...
+    VTKOutput->writeToFile(): bEverywhere = 1
+write_nodal_values_piece()
+done
+
+

@@ -118,6 +118,7 @@ solver:init(A, u)
 solver:apply(u, b)
 
 
+--solFileName = "laplace_mgstats_custom_test_" .. dim .. "d"
 solFileName = "../output/automated/laplace_mgstats_custom_test_" .. dim .. "d"
 print("writing solution to '" .. solFileName .. "'...")
 WriteGridFunctionToVTK(u, solFileName)
