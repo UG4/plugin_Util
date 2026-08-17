@@ -1,7 +1,7 @@
 print("[precond_test] load script")
 ug_load_script("ug_util.lua")
 
-ug_load_script("../lua/lua-include.lua")
+ug_load_script("../../lua/lua-include.lua")
 InitUG(2, AlgebraType("CPU", 1))
 local iluDesc ={
 	type = "ilu",
@@ -27,7 +27,7 @@ local egsDesc = {
 }
 
 
-dom = util.CreateDomain("grids/grid.ugx", 1, {})
+dom = util.CreateDomain("../grids/grid.ugx", 1, {})
 approxSpace = ApproximationSpace(dom)
 local gmgDesc = {
 	type = "gmg",

@@ -30,53 +30,35 @@
 
 
 -- Load utility scripts (e.g. from from ugcore/scripts)
-ug_load_script("../lua/lua-include.lua")
+ug_load_script("../../lua/lua-include.lua")
 ug_load_script("util/refinement_util.lua")
 
 -- Parse parameters and print help
-gridName	= util.GetParam("-grid", "grids/cooler.ugx",
+dim			= util.GetParamNumber("-dim", 3, "Dimension of the problem", {2,3})
+
+gridName	= util.GetParam("-grid", "../grids/laplace_sphere_" .. dim .. "d.ugx",
 							"filename of underlying grid")
-numRefs		= util.GetParamNumber("-numRefs", 2, "number of refinements")
-
-steadyState	= util.HasParamOption("-steadyState", "If specified, the steady state of the problem is computed. Else a time-dependent problem is computed.")
-
-endTime 	= util.GetParamNumber("-endTime", 0.4, "simulated time frame in seconds")
-dt			= util.GetParamNumber("-dt", 0.02, "time step size")
-
-util.CheckAndPrintHelp("Cooler");
+numRefs		= util.GetParamNumber("-numRefs", 4, "number of refinements")
 
 
--- initialize ug with the world dimension 3 and an algebra system with scalar coefficients
-InitUG(3, AlgebraType("CPU", 1));
+util.CheckAndPrintHelp("Laplace-Problem");
+
+
+-- initialize ug with the world dimension 2 and scalar matrix coefficients
+InitUG(dim, AlgebraType("CPU", 1));
 
 
 -- Load a domain without initial refinements.
-requiredSubsets = {"cooler", "air", "staticAir", "cpu", "inflow", "outflow"}
+requiredSubsets = {"Inner", "bndNegative", "bndPositive"}
 dom = util.CreateDomain(gridName, 0, requiredSubsets)
 
 -- Refine the domain (redistribution is handled internally for parallel runs)
 print("refining...")
--- This balancing setup makes sense for structured grids with uniform refinement
-balancerDesc = {
-	partitioner = {
-		name = "staticBisection",
-		clusteredSiblings = false
-	},
-
-	hierarchy = {
-		name 						= "noRedists",
-		minElemsPerProcPerLevel		= redistElemThreshold,
-		maxRedistProcs				= redistProcs,
-	},
-}
-util.refinement.CreateRegularHierarchy(dom, numRefs, true, balancerDesc)
-
-
-
+util.refinement.CreateRegularHierarchy(dom, numRefs, true)
 
 -- set up approximation space
 approxSpace = ApproximationSpace(dom)
-approxSpace:add_fct("t", "Lagrange", 1)
+approxSpace:add_fct("c", "Lagrange", 1)
 approxSpace:init_levels()
 approxSpace:init_top_surface()
 
@@ -85,30 +67,21 @@ approxSpace:print_statistic()
 
 
 -- set up discretization
-coolerDisc = ConvectionDiffusion("t", "cooler", "fv1")
-coolerDisc:set_diffusion(10)
+-- Please have a look at this page for more information on the
+-- ConvectionDiffusion discretization object:
+-- http://ug4.github.io/docs/plugins/classug_1_1_convection_diffusion_plugin_1_1_convection_diffusion_base.html#details
 
-airDisc = ConvectionDiffusion("t", "air", "fv1")
-airDisc:set_diffusion(0.1)
-airDisc:set_velocity({0, 10, 0})
-airDisc:set_upwind(FullUpwind())
+elemDisc = ConvectionDiffusion("c", "Inner", "fv1")
+elemDisc:set_diffusion(ConstUserMatrix(1.0))
+elemDisc:set_source(0)
 
-staticAirDisc = ConvectionDiffusion("t", "staticAir", "fv1")
-staticAirDisc:set_diffusion(0.1)
-
-flowBnd = DirichletBoundary()
-flowBnd:add(20, "t", "inflow")
-flowBnd:add(20, "t", "outflow")
-
-cpuBnd = DirichletBoundary()
-cpuBnd:add(80, "t", "cpu")
+dirichletBND = DirichletBoundary()
+dirichletBND:add(-1, "c", "bndNegative")
+dirichletBND:add(1, "c", "bndPositive")
 
 domainDisc = DomainDiscretization(approxSpace)
-domainDisc:add(coolerDisc)
-domainDisc:add(airDisc)
-domainDisc:add(staticAirDisc)
-domainDisc:add(flowBnd)
-domainDisc:add(cpuBnd)
+domainDisc:add(elemDisc)
+domainDisc:add(dirichletBND)
 
 
 -- set up solver (using 'util/solver_util.lua')
@@ -117,8 +90,9 @@ solverDesc = {
 	precond = {
 		type		= "gmg",
 		--approxSpace	= approxSpace,
-		smoother	= "ilu",
-		baseSolver	= "lu"
+		smoother	= "jac",
+		baseSolver	= "lu",
+		mgStats         = "standard"
 	}
 }
 local solverutil = SolverUtil()
@@ -126,29 +100,21 @@ solverutil:setApproximationSpace("approxSpace",approxSpace)
 solver = util.test.CreateSolver(solverDesc,solverutil)
 
 
-print("\nsolving...")
+print("\ntest_solving...")
+A = AssembledLinearOperator(domainDisc)
 u = GridFunction(approxSpace)
-u:set(20.0)
+b = GridFunction(approxSpace)
+u:set(0.0)
+domainDisc:adjust_solution(u)
+domainDisc:assemble_linear(A, b)
+
+solver:init(A, u)
+solver:apply(u, b)
 
 
-if steadyState then
-	local A = AssembledLinearOperator(domainDisc)
-	local b = GridFunction(approxSpace)
-	domainDisc:adjust_solution(u)
-	domainDisc:assemble_linear(A, b)
-
-	solver:init(A, u)
-	solver:apply(u, b)
-
-	solFileName = "cooler_test"
-	print("writing solution to '" .. solFileName .. "'...")
-	WriteGridFunctionToVTK(u, solFileName)
-	SaveVectorForConnectionViewer(u, solFileName .. ".vec")
-else
-	local startTime = 0
-	util.SolveLinearTimeProblem(u, domainDisc, solver, VTKOutput(), "cooler_test",
-								"ImplEuler", 1, startTime, endTime, dt); 
-end
+solFileName = "../output/automated/laplace_mgstats_standard_test_" .. dim .. "d"
+print("writing solution to '" .. solFileName .. "'...")
+WriteGridFunctionToVTK(u, solFileName)
+SaveVectorForConnectionViewer(u, solFileName .. ".vec")
 
 print("done")
-

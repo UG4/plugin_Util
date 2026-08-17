@@ -119,7 +119,7 @@ function util.test.CreateLineSearch(desc)
     --call our registered c++ function
     local functionProvider = SolverUtilFunctionProvider()
     ls = functionProvider:CreateLineSearch(jsondesc)
-    print(ls:config_string())
+    --print(ls:config_string())
     --return linsearch
     return ls
 end
